@@ -4,7 +4,7 @@ import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-public class MutableUnsignedLong128Test
+public class MutableUnsigned128Test
 {
 	
 	private static MutableUnsigned128 of(final long high, final long low) {

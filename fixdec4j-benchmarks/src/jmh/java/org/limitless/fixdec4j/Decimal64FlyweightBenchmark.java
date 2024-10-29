@@ -14,17 +14,19 @@ import java.util.concurrent.TimeUnit;
 @OutputTimeUnit(TimeUnit.MILLISECONDS)
 @State(Scope.Thread)
 @BenchmarkMode(Mode.AverageTime)
-public class FixedDecimalBenchmark {
+public class Decimal64FlyweightBenchmark {
 
     @State(Scope.Benchmark)
     public static class AddState {
         long a;
         long b;
+
         @Setup
         public void setup() {
             a = Decimal64Flyweight.valueOf(10_000_000_000_000000L, -6);
             b = Decimal64Flyweight.valueOf(20_000_000_000_000000L, -6);
         }
+
         @TearDown
         public void tearDown() {
             a = 0;
@@ -36,6 +38,7 @@ public class FixedDecimalBenchmark {
     public static class MultState {
         long a;
         long b;
+
         @Setup
         public void setup() {
 //            a = FixedDecimal.of(10_000_000_000_000000L, -6);
@@ -46,6 +49,7 @@ public class FixedDecimalBenchmark {
             b = Decimal64Flyweight.valueOf(1_1234, -4);
 
         }
+
         @TearDown
         public void tearDown() {
             a = 0;
@@ -57,6 +61,7 @@ public class FixedDecimalBenchmark {
     public static class DivState {
         long a;
         long b;
+
         @Setup
         public void setup() {
 //            a = FixedDecimal.of(25_000_000_000_000000L, -6);
@@ -103,6 +108,6 @@ public class FixedDecimalBenchmark {
     }
 
     public static void main(String[] args) throws RunnerException {
-        new Runner(new OptionsBuilder().include(FixedDecimalBenchmark.class.getSimpleName()).build()).run();
+        new Runner(new OptionsBuilder().include(Decimal64FlyweightBenchmark.class.getSimpleName()).build()).run();
     }
 }

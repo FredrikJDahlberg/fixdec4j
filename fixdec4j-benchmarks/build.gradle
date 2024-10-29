@@ -2,7 +2,7 @@ plugins {
     id 'me.champeau.jmh' version '0.7.2'
 }
 
-version = '1.0.0'
+version = '1.0.1'
 
 sourceSets {
     jmh {
@@ -17,5 +17,5 @@ dependencies {
 }
 
 jmh {
-    includes = ['DoubleBenchmark.java', 'FixedBenchmark.java', 'MutableBenchmark.java' ]  // 'BaseBenchmark.java',
+    includes = ['Benchmark']
 }

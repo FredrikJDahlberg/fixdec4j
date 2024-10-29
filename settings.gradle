@@ -1,0 +1,3 @@
+rootProject.name = 'fixdec4j'
+include 'fixdec4j'
+include 'fixdec4j-benchmarks'

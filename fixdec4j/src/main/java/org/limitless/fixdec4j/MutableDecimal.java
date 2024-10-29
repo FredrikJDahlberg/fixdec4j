@@ -8,15 +8,15 @@ package org.limitless.fixdec4j;
 public final class MutableDecimal implements Comparable<MutableDecimal>
 {
 	// mantissa limits
-	public static final long MANTISSA_MAX = DecimalFlyweight.MANTISSA_MAX;
-	public static final long MANTISSA_MIN = DecimalFlyweight.MANTISSA_MIN;
-	public static final long MANTISSA_ERROR = DecimalFlyweight.MANTISSA_ERROR;
+	public static final long MANTISSA_MAX = Decimal64Flyweight.MANTISSA_MAX;
+	public static final long MANTISSA_MIN = Decimal64Flyweight.MANTISSA_MIN;
+	public static final long MANTISSA_ERROR = Decimal64Flyweight.MANTISSA_ERROR;
 	
 	// constants
-	public static final MutableDecimal MAX_VALUE = new MutableDecimal(DecimalFlyweight.MAX_VALUE);
-	public static final MutableDecimal MIN_VALUE = new MutableDecimal(DecimalFlyweight.MIN_VALUE);
+	public static final MutableDecimal MAX_VALUE = new MutableDecimal(Decimal64Flyweight.MAX_VALUE);
+	public static final MutableDecimal MIN_VALUE = new MutableDecimal(Decimal64Flyweight.MIN_VALUE);
 	public static final MutableDecimal ZERO = new MutableDecimal(0);
-	public static final MutableDecimal NAN = new MutableDecimal(DecimalFlyweight.NAN);
+	public static final MutableDecimal NAN = new MutableDecimal(Decimal64Flyweight.NAN);
 
 	private long m_fixedValue;
 
@@ -53,7 +53,7 @@ public final class MutableDecimal implements Comparable<MutableDecimal>
 	 */
 	public MutableDecimal(final long inScaledMantissa, final int inExponent)
 	{
-		m_fixedValue = DecimalFlyweight.valueOf(inScaledMantissa, inExponent);
+		m_fixedValue = Decimal64Flyweight.valueOf(inScaledMantissa, inExponent);
 	}
 
 	/**
@@ -75,7 +75,7 @@ public final class MutableDecimal implements Comparable<MutableDecimal>
 	public static MutableDecimal valueOf(final String inValue)
 	{
 		final MutableDecimal fixed = new MutableDecimal();
-		fixed.m_fixedValue = DecimalFlyweight.valueOf(inValue);
+		fixed.m_fixedValue = Decimal64Flyweight.valueOf(inValue);
 		return fixed;
 	}
 
@@ -88,7 +88,7 @@ public final class MutableDecimal implements Comparable<MutableDecimal>
 	public static MutableDecimal valueOf(final double inValue, final int inDecimals)
 	{
 		final MutableDecimal fixed = new MutableDecimal();
-		fixed.m_fixedValue = DecimalFlyweight.valueOf(inValue, inDecimals);
+		fixed.m_fixedValue = Decimal64Flyweight.valueOf(inValue, inDecimals);
 		return fixed;
 	}
 
@@ -99,7 +99,7 @@ public final class MutableDecimal implements Comparable<MutableDecimal>
 	@Override
 	public String toString()
 	{
-		return DecimalFlyweight.toString(m_fixedValue);
+		return Decimal64Flyweight.toString(m_fixedValue);
 	}
 	
 	/**
@@ -128,7 +128,7 @@ public final class MutableDecimal implements Comparable<MutableDecimal>
 	@Override
 	public int hashCode()
 	{
-		return DecimalFlyweight.hashCode(m_fixedValue);
+		return Decimal64Flyweight.hashCode(m_fixedValue);
 	}
 	
 	/**
@@ -144,7 +144,7 @@ public final class MutableDecimal implements Comparable<MutableDecimal>
 			return 1;
 		}
 
-		return DecimalFlyweight.compareTo(m_fixedValue, inValue.m_fixedValue);
+		return Decimal64Flyweight.compareTo(m_fixedValue, inValue.m_fixedValue);
 	}
 	
 	/**
@@ -153,7 +153,7 @@ public final class MutableDecimal implements Comparable<MutableDecimal>
 	 */
 	public long mantissa()
 	{
-		return DecimalFlyweight.mantissa(m_fixedValue);
+		return Decimal64Flyweight.mantissa(m_fixedValue);
 	}
 
 	/**
@@ -163,7 +163,7 @@ public final class MutableDecimal implements Comparable<MutableDecimal>
 	 */
 	public int exponent()
 	{
-		return DecimalFlyweight.exponent(m_fixedValue);
+		return Decimal64Flyweight.exponent(m_fixedValue);
 	}
 
 	/**
@@ -172,7 +172,7 @@ public final class MutableDecimal implements Comparable<MutableDecimal>
 	 */
 	public boolean isNaN()
 	{
-		return DecimalFlyweight.isNaN(m_fixedValue);
+		return Decimal64Flyweight.isNaN(m_fixedValue);
 	}
 	
 	/**
@@ -181,7 +181,7 @@ public final class MutableDecimal implements Comparable<MutableDecimal>
 	 */
 	public boolean isZero()
 	{
-		return DecimalFlyweight.isZero(m_fixedValue);
+		return Decimal64Flyweight.isZero(m_fixedValue);
 	}
 	
 	/**
@@ -191,7 +191,7 @@ public final class MutableDecimal implements Comparable<MutableDecimal>
 	 */
 	public MutableDecimal add(final MutableDecimal inValue)
 	{
-		m_fixedValue = DecimalFlyweight.add(m_fixedValue, inValue.m_fixedValue);
+		m_fixedValue = Decimal64Flyweight.add(m_fixedValue, inValue.m_fixedValue);
 		return this;
 	}
 
@@ -202,7 +202,7 @@ public final class MutableDecimal implements Comparable<MutableDecimal>
 	 */
 	public MutableDecimal subtract(final MutableDecimal inValue)
 	{
-		m_fixedValue = DecimalFlyweight.subtract(m_fixedValue, inValue.m_fixedValue);
+		m_fixedValue = Decimal64Flyweight.subtract(m_fixedValue, inValue.m_fixedValue);
 		return this;
 	}
 
@@ -212,7 +212,7 @@ public final class MutableDecimal implements Comparable<MutableDecimal>
 	 */
 	public MutableDecimal minus()
 	{
-		m_fixedValue = DecimalFlyweight.minus(m_fixedValue);
+		m_fixedValue = Decimal64Flyweight.minus(m_fixedValue);
 		return this;
 	}
 
@@ -223,7 +223,7 @@ public final class MutableDecimal implements Comparable<MutableDecimal>
 	 */
 	public MutableDecimal multiply(final MutableDecimal inValue)
 	{
-		m_fixedValue = DecimalFlyweight.multiply(m_fixedValue, inValue.m_fixedValue, DecimalRounding.UP);
+		m_fixedValue = Decimal64Flyweight.multiply(m_fixedValue, inValue.m_fixedValue, DecimalRounding.UP);
 		return this;
 	}
 	
@@ -235,7 +235,7 @@ public final class MutableDecimal implements Comparable<MutableDecimal>
 	 */
 	public MutableDecimal multiply(final MutableDecimal inValue, final DecimalRounding inMode)
 	{
-		m_fixedValue = DecimalFlyweight.multiply(m_fixedValue, inValue.m_fixedValue, inMode);
+		m_fixedValue = Decimal64Flyweight.multiply(m_fixedValue, inValue.m_fixedValue, inMode);
 		return this;
 	}
 
@@ -246,7 +246,7 @@ public final class MutableDecimal implements Comparable<MutableDecimal>
 	 */
 	public MutableDecimal divide(final MutableDecimal inValue)
 	{
-		m_fixedValue = DecimalFlyweight.divide(m_fixedValue, inValue.m_fixedValue, DecimalRounding.UP);
+		m_fixedValue = Decimal64Flyweight.divide(m_fixedValue, inValue.m_fixedValue, DecimalRounding.UP);
 		return this;
 	}
 
@@ -258,7 +258,7 @@ public final class MutableDecimal implements Comparable<MutableDecimal>
 	 */
 	public MutableDecimal divide(final MutableDecimal inValue, final DecimalRounding inMode)
 	{
-		m_fixedValue = DecimalFlyweight.divide(m_fixedValue, inValue.m_fixedValue, inMode);
+		m_fixedValue = Decimal64Flyweight.divide(m_fixedValue, inValue.m_fixedValue, inMode);
 		return this;
 	}
 
@@ -270,7 +270,7 @@ public final class MutableDecimal implements Comparable<MutableDecimal>
 	 */
 	public MutableDecimal round(final int inDecimals, final DecimalRounding inMode)
 	{
-		m_fixedValue = DecimalFlyweight.round(m_fixedValue, inDecimals, inMode);
+		m_fixedValue = Decimal64Flyweight.round(m_fixedValue, inDecimals, inMode);
 		return this;
 	}
 	
@@ -280,7 +280,7 @@ public final class MutableDecimal implements Comparable<MutableDecimal>
 	 */
 	public MutableDecimal abs()
 	{
-		m_fixedValue = DecimalFlyweight.abs(m_fixedValue);
+		m_fixedValue = Decimal64Flyweight.abs(m_fixedValue);
 		return this;
 	}
 
@@ -290,7 +290,7 @@ public final class MutableDecimal implements Comparable<MutableDecimal>
 	 */
 	public byte byteValue()
 	{
-		return DecimalFlyweight.byteValue(m_fixedValue);
+		return Decimal64Flyweight.byteValue(m_fixedValue);
 	}
 
 	/**
@@ -299,7 +299,7 @@ public final class MutableDecimal implements Comparable<MutableDecimal>
 	 */
 	public short shortValue()
 	{
-		return DecimalFlyweight.shortValue(m_fixedValue);
+		return Decimal64Flyweight.shortValue(m_fixedValue);
 	}
 
 	/**
@@ -308,7 +308,7 @@ public final class MutableDecimal implements Comparable<MutableDecimal>
 	 */
 	public int intValue()
 	{
-		return DecimalFlyweight.intValue(m_fixedValue);
+		return Decimal64Flyweight.intValue(m_fixedValue);
 	}
 
 
@@ -318,7 +318,7 @@ public final class MutableDecimal implements Comparable<MutableDecimal>
 	 */
 	public long longValue()
 	{
-		return DecimalFlyweight.longValue(m_fixedValue);
+		return Decimal64Flyweight.longValue(m_fixedValue);
 	}
 
 	/**
@@ -327,7 +327,7 @@ public final class MutableDecimal implements Comparable<MutableDecimal>
 	 */
 	public float floatValue()
 	{
-		return DecimalFlyweight.floatValue(m_fixedValue);
+		return Decimal64Flyweight.floatValue(m_fixedValue);
 	}
 
 	/**
@@ -336,7 +336,7 @@ public final class MutableDecimal implements Comparable<MutableDecimal>
 	 */
 	public double doubleValue()
 	{
-		return DecimalFlyweight.doubleValue(m_fixedValue);
+		return Decimal64Flyweight.doubleValue(m_fixedValue);
 	}
 	
 	/**

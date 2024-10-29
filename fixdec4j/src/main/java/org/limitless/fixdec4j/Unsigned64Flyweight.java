@@ -5,7 +5,7 @@ package org.limitless.fixdec4j;
  * @author Fredah
  *
  */
-public final class Unsigned
+public final class Unsigned64Flyweight
 {
 	/**
 	 * Returns the number of bits in the number, e.g. ln(value)/ln(2). 
@@ -123,6 +123,6 @@ public final class Unsigned
 		final long flipped1 = inUnsignedValue1 ^ Long.MIN_VALUE;
 		final long flipped2 = inUnsignedValue2 ^ Long.MIN_VALUE;
 
-		return (flipped1 < flipped2) ? -1 : ((flipped1 > flipped2 ? 1 : 0));
+		return Long.compare(flipped1, flipped2);
 	}
 }

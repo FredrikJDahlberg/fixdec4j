@@ -2,10 +2,19 @@ package org.limitless.fixdec4j;
 
 import org.openjdk.jmh.annotations.*;
 import org.openjdk.jmh.infra.Blackhole;
+import org.openjdk.jmh.runner.Runner;
+import org.openjdk.jmh.runner.RunnerException;
+import org.openjdk.jmh.runner.options.OptionsBuilder;
 
+import java.util.concurrent.TimeUnit;
+
+@Fork(jvmArgsAppend = "-server", value = 1)
+@Warmup(iterations = 5, batchSize = 10_000_000)
+@Measurement(iterations = 5, batchSize = 10_000_000)
+@OutputTimeUnit(TimeUnit.MILLISECONDS)
 @State(Scope.Thread)
-@Fork(jvmArgsAppend = "-server")
-public class FixedBenchmark {
+@BenchmarkMode(Mode.AverageTime)
+public class FixedDecimalBenchmark {
 
     @State(Scope.Benchmark)
     public static class AddState {
@@ -13,8 +22,8 @@ public class FixedBenchmark {
         long b;
         @Setup
         public void setup() {
-            a = DecimalFlyweight.valueOf(10_000_000_000_000000L, -6);
-            b = DecimalFlyweight.valueOf(20_000_000_000_000000L, -6);
+            a = Decimal64Flyweight.valueOf(10_000_000_000_000000L, -6);
+            b = Decimal64Flyweight.valueOf(20_000_000_000_000000L, -6);
         }
         @TearDown
         public void tearDown() {
@@ -33,8 +42,8 @@ public class FixedBenchmark {
 //            b = FixedDecimal.of(1_1234567, -6);
 //            a = FixedDecimal.of(10_000_000_000000L, -6);
 //            b = FixedDecimal.of(1_1234567, -6);
-            a = DecimalFlyweight.valueOf(1_000_000_0000L, -4);
-            b = DecimalFlyweight.valueOf(1_1234, -4);
+            a = Decimal64Flyweight.valueOf(1_000_000_0000L, -4);
+            b = Decimal64Flyweight.valueOf(1_1234, -4);
 
         }
         @TearDown
@@ -52,8 +61,8 @@ public class FixedBenchmark {
         public void setup() {
 //            a = FixedDecimal.of(25_000_000_000_000000L, -6);
 //            b = FixedDecimal.of(23_123_456_000_000000L, -6);
-            a = DecimalFlyweight.valueOf(25_000_000_000L, -3);
-            b = DecimalFlyweight.valueOf(23_123_000_000L, -3);
+            a = Decimal64Flyweight.valueOf(25_000_000_000L, -3);
+            b = Decimal64Flyweight.valueOf(23_123_000_000L, -3);
         }
 
         @TearDown
@@ -65,17 +74,17 @@ public class FixedBenchmark {
 
     //    @CompilerControl(CompilerControl.Mode.INLINE)
     public long add(final long a, final long b) {
-        return DecimalFlyweight.add(a, b);
+        return Decimal64Flyweight.add(a, b);
     }
 
     //    @CompilerControl(CompilerControl.Mode.INLINE)
     public long multiply(final long a, final long b) {
-        return DecimalFlyweight.multiply(a, b, DecimalRounding.UP);
+        return Decimal64Flyweight.multiply(a, b, DecimalRounding.UP);
     }
 
     //    @CompilerControl(CompilerControl.Mode.INLINE)
     public long divide(final long a, final long b) {
-        return DecimalFlyweight.divide(a, b, DecimalRounding.UP);
+        return Decimal64Flyweight.divide(a, b, DecimalRounding.UP);
     }
 
     @Benchmark
@@ -91,5 +100,9 @@ public class FixedBenchmark {
     @Benchmark
     public final void divide(DivState state, Blackhole black) {
         black.consume(divide(state.a, state.b));
+    }
+
+    public static void main(String[] args) throws RunnerException {
+        new Runner(new OptionsBuilder().include(FixedDecimalBenchmark.class.getSimpleName()).build()).run();
     }
 }

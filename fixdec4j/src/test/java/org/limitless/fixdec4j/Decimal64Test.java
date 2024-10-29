@@ -1,14 +1,10 @@
 package org.limitless.fixdec4j;
 
-import jdk.jfr.Description;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.TestWatcher;
 
 import static org.junit.jupiter.api.Assertions.*;
-//import static org.junit.jupiter.api.Rule;
 
-public class TestFixedDecimal
-{
+public class Decimal64Test {
 	/*
 	@Rule
 	public TestWatcher watcher = new TestWatcher()
@@ -34,123 +30,123 @@ public class TestFixedDecimal
 */
 	private static long of(final long mantissa, final int exponent)
 	{
-		return DecimalFlyweight.valueOf(mantissa, exponent);
+		return Decimal64Flyweight.valueOf(mantissa, exponent);
 	}
 
 	private static void add(final long a, final long b, final long c)
 	{
-		System.out.format("%de%d, %s + %s = %s%n", DecimalFlyweight.mantissa(c),
-				DecimalFlyweight.exponent(c), DecimalFlyweight.toString(a),
-				DecimalFlyweight.toString(b), DecimalFlyweight.toString(c));
-		final long r = DecimalFlyweight.add(a, b);
+		System.out.format("%de%d, %s + %s = %s%n", Decimal64Flyweight.mantissa(c),
+				Decimal64Flyweight.exponent(c), Decimal64Flyweight.toString(a),
+				Decimal64Flyweight.toString(b), Decimal64Flyweight.toString(c));
+		final long r = Decimal64Flyweight.add(a, b);
 
-		assertEquals(r, c, "Expected " + DecimalFlyweight.toString(c) + ", Value="
-			+ DecimalFlyweight.toString(r));
+		assertEquals(r, c, "Expected " + Decimal64Flyweight.toString(c) + ", Value="
+			+ Decimal64Flyweight.toString(r));
 
-		final MutableDecimal a1 = MutableDecimal.valueOf(DecimalFlyweight.mantissa(a),
-				DecimalFlyweight.exponent(a));
-		final MutableDecimal b1 = MutableDecimal.valueOf(DecimalFlyweight.mantissa(b),
-				DecimalFlyweight.exponent(b));
+		final MutableDecimal a1 = MutableDecimal.valueOf(Decimal64Flyweight.mantissa(a),
+				Decimal64Flyweight.exponent(a));
+		final MutableDecimal b1 = MutableDecimal.valueOf(Decimal64Flyweight.mantissa(b),
+				Decimal64Flyweight.exponent(b));
 		a1.add(b1);
-		assertEquals(a1.toLongBits(), c, "Expected " + DecimalFlyweight.toString(c) + ", Value=" + a1);
+		assertEquals(a1.toLongBits(), c, "Expected " + Decimal64Flyweight.toString(c) + ", Value=" + a1);
 
-		final Decimal a2 = Decimal.valueOf(DecimalFlyweight.mantissa(a),
-				DecimalFlyweight.exponent(a));
-		final Decimal b2 = Decimal.valueOf(DecimalFlyweight.mantissa(b),
-				DecimalFlyweight.exponent(b));
-		final Decimal c2 = a2.add(b2);
+		final Decimal64 a2 = Decimal64.valueOf(Decimal64Flyweight.mantissa(a),
+				Decimal64Flyweight.exponent(a));
+		final Decimal64 b2 = Decimal64.valueOf(Decimal64Flyweight.mantissa(b),
+				Decimal64Flyweight.exponent(b));
+		final Decimal64 c2 = a2.add(b2);
 		final long f2 = of(c2.mantissa(), c2.exponent());
-		assertEquals(f2, c, "Expected " + DecimalFlyweight.toString(c) + ", Value=" + c2);
+		assertEquals(f2, c, "Expected " + Decimal64Flyweight.toString(c) + ", Value=" + c2);
 	}
 
 	private static void subtract(final long a, final long b, final long c)
 	{
-		System.out.format("%de%d, %s - %s = %s%n", DecimalFlyweight.mantissa(c),
-				DecimalFlyweight.exponent(c), DecimalFlyweight.toString(a),
-				DecimalFlyweight.toString(b), DecimalFlyweight.toString(c));
-		final long r = DecimalFlyweight.subtract(a, b);
-		assertEquals(r, c, "Expected " + DecimalFlyweight.toString(c) + ", Value="
-			+ DecimalFlyweight.toString(r));
+		System.out.format("%de%d, %s - %s = %s%n", Decimal64Flyweight.mantissa(c),
+				Decimal64Flyweight.exponent(c), Decimal64Flyweight.toString(a),
+				Decimal64Flyweight.toString(b), Decimal64Flyweight.toString(c));
+		final long r = Decimal64Flyweight.subtract(a, b);
+		assertEquals(r, c, "Expected " + Decimal64Flyweight.toString(c) + ", Value="
+			+ Decimal64Flyweight.toString(r));
 
-		final MutableDecimal a1 = MutableDecimal.valueOf(DecimalFlyweight.mantissa(a),
-				DecimalFlyweight.exponent(a));
-		final MutableDecimal b1 = MutableDecimal.valueOf(DecimalFlyweight.mantissa(b),
-				DecimalFlyweight.exponent(b));
+		final MutableDecimal a1 = MutableDecimal.valueOf(Decimal64Flyweight.mantissa(a),
+				Decimal64Flyweight.exponent(a));
+		final MutableDecimal b1 = MutableDecimal.valueOf(Decimal64Flyweight.mantissa(b),
+				Decimal64Flyweight.exponent(b));
 		a1.subtract(b1);
-		assertEquals(a1.toLongBits(), c, "Expected " + DecimalFlyweight.toString(c) + ", Value=" + a1);
+		assertEquals(a1.toLongBits(), c, "Expected " + Decimal64Flyweight.toString(c) + ", Value=" + a1);
 
-		final Decimal a2 = Decimal.valueOf(DecimalFlyweight.mantissa(a),
-				DecimalFlyweight.exponent(a));
-		final Decimal b2 = Decimal.valueOf(DecimalFlyweight.mantissa(b),
-				DecimalFlyweight.exponent(b));
-		final Decimal c2 = a2.subtract(b2);
+		final Decimal64 a2 = Decimal64.valueOf(Decimal64Flyweight.mantissa(a),
+				Decimal64Flyweight.exponent(a));
+		final Decimal64 b2 = Decimal64.valueOf(Decimal64Flyweight.mantissa(b),
+				Decimal64Flyweight.exponent(b));
+		final Decimal64 c2 = a2.subtract(b2);
 		final long f2 = of(c2.mantissa(), c2.exponent());
-		assertEquals(f2, c, "Expected " + DecimalFlyweight.toString(c) + ", Value=" + c2);
+		assertEquals(f2, c, "Expected " + Decimal64Flyweight.toString(c) + ", Value=" + c2);
 	}
 
 	private static void multiply(final long a, final long b, final long c)
 	{
-		System.out.format("%de%d, %s * %s = %s%n", DecimalFlyweight.mantissa(c),
-				DecimalFlyweight.exponent(c), DecimalFlyweight.toString(a),
-				DecimalFlyweight.toString(b), DecimalFlyweight.toString(c));
-		final long r = DecimalFlyweight.multiply(a, b, DecimalRounding.UP);
-		assertEquals(r, c, "Expected " + DecimalFlyweight.toString(c) + ", Value="
-			+ DecimalFlyweight.toString(r));
+		System.out.format("%de%d, %s * %s = %s%n", Decimal64Flyweight.mantissa(c),
+				Decimal64Flyweight.exponent(c), Decimal64Flyweight.toString(a),
+				Decimal64Flyweight.toString(b), Decimal64Flyweight.toString(c));
+		final long r = Decimal64Flyweight.multiply(a, b, DecimalRounding.UP);
+		assertEquals(r, c, "Expected " + Decimal64Flyweight.toString(c) + ", Value="
+			+ Decimal64Flyweight.toString(r));
 
-		final MutableDecimal a1 = MutableDecimal.valueOf(DecimalFlyweight.mantissa(a),
-				DecimalFlyweight.exponent(a));
-		final MutableDecimal b1 = MutableDecimal.valueOf(DecimalFlyweight.mantissa(b),
-				DecimalFlyweight.exponent(b));
+		final MutableDecimal a1 = MutableDecimal.valueOf(Decimal64Flyweight.mantissa(a),
+				Decimal64Flyweight.exponent(a));
+		final MutableDecimal b1 = MutableDecimal.valueOf(Decimal64Flyweight.mantissa(b),
+				Decimal64Flyweight.exponent(b));
 		a1.multiply(b1);
-		assertEquals(a1.toLongBits(),c, "Expected " + DecimalFlyweight.toString(c) + ", Value=" + a1);
+		assertEquals(a1.toLongBits(),c, "Expected " + Decimal64Flyweight.toString(c) + ", Value=" + a1);
 
-		final Decimal a2 = Decimal.valueOf(DecimalFlyweight.mantissa(a),
-				DecimalFlyweight.exponent(a));
-		final Decimal b2 = Decimal.valueOf(DecimalFlyweight.mantissa(b),
-				DecimalFlyweight.exponent(b));
-		final Decimal c2 = a2.multiply(b2);
+		final Decimal64 a2 = Decimal64.valueOf(Decimal64Flyweight.mantissa(a),
+				Decimal64Flyweight.exponent(a));
+		final Decimal64 b2 = Decimal64.valueOf(Decimal64Flyweight.mantissa(b),
+				Decimal64Flyweight.exponent(b));
+		final Decimal64 c2 = a2.multiply(b2);
 		final long f2 = of(c2.mantissa(), c2.exponent());
-		assertEquals(f2, c, "Expected " + DecimalFlyweight.toString(c) + ", Value=" + c2);
+		assertEquals(f2, c, "Expected " + Decimal64Flyweight.toString(c) + ", Value=" + c2);
 	}
 
 	private static void divide(final long a, final long b, final long c)
 	{
-		System.out.format("%de%d, %s / %s = %s%n", DecimalFlyweight.mantissa(c),
-				DecimalFlyweight.exponent(c), DecimalFlyweight.toString(a),
-				DecimalFlyweight.toString(b), DecimalFlyweight.toString(c));
-		final long r = DecimalFlyweight.divide(a, b, DecimalRounding.UP);
-		assertEquals(r, c, "Expected " + DecimalFlyweight.toString(c) + ", Value="
-			+ DecimalFlyweight.toString(r));
+		System.out.format("%de%d, %s / %s = %s%n", Decimal64Flyweight.mantissa(c),
+				Decimal64Flyweight.exponent(c), Decimal64Flyweight.toString(a),
+				Decimal64Flyweight.toString(b), Decimal64Flyweight.toString(c));
+		final long r = Decimal64Flyweight.divide(a, b, DecimalRounding.UP);
+		assertEquals(r, c, "Expected " + Decimal64Flyweight.toString(c) + ", Value="
+			+ Decimal64Flyweight.toString(r));
 
-		final MutableDecimal a1 = MutableDecimal.valueOf(DecimalFlyweight.mantissa(a),
-				DecimalFlyweight.exponent(a));
-		final MutableDecimal b1 = MutableDecimal.valueOf(DecimalFlyweight.mantissa(b),
-				DecimalFlyweight.exponent(b));
+		final MutableDecimal a1 = MutableDecimal.valueOf(Decimal64Flyweight.mantissa(a),
+				Decimal64Flyweight.exponent(a));
+		final MutableDecimal b1 = MutableDecimal.valueOf(Decimal64Flyweight.mantissa(b),
+				Decimal64Flyweight.exponent(b));
 		a1.divide(b1);
-		assertEquals(a1.toLongBits(),c, "Expected " + DecimalFlyweight.toString(c) + ", Value=" + a1);
+		assertEquals(a1.toLongBits(),c, "Expected " + Decimal64Flyweight.toString(c) + ", Value=" + a1);
 
-		final Decimal a2 = Decimal.valueOf(DecimalFlyweight.mantissa(a),
-				DecimalFlyweight.exponent(a));
-		final Decimal b2 = Decimal.valueOf(DecimalFlyweight.mantissa(b),
-				DecimalFlyweight.exponent(b));
-		final Decimal c2 = a2.divide(b2);
+		final Decimal64 a2 = Decimal64.valueOf(Decimal64Flyweight.mantissa(a),
+				Decimal64Flyweight.exponent(a));
+		final Decimal64 b2 = Decimal64.valueOf(Decimal64Flyweight.mantissa(b),
+				Decimal64Flyweight.exponent(b));
+		final Decimal64 c2 = a2.divide(b2);
 		final long f2 = of(c2.mantissa(), c2.exponent());
-		assertEquals(f2, c, "Expected " + DecimalFlyweight.toString(c) + ", Value=" + c2);
+		assertEquals(f2, c, "Expected " + Decimal64Flyweight.toString(c) + ", Value=" + c2);
 	}
 
 	private static void parse(final long f, final String s)
 	{
-		System.out.format("%de%d, parse(%s) = %s%n", DecimalFlyweight.mantissa(f),
-				DecimalFlyweight.exponent(f), s, DecimalFlyweight.toString(f));
-		final long r = DecimalFlyweight.valueOf(s);
-		assertEquals(f, r, "Expected " + DecimalFlyweight.toString(f) + ", Value="
-			+ DecimalFlyweight.toString(r));
+		System.out.format("%de%d, parse(%s) = %s%n", Decimal64Flyweight.mantissa(f),
+				Decimal64Flyweight.exponent(f), s, Decimal64Flyweight.toString(f));
+		final long r = Decimal64Flyweight.valueOf(s);
+		assertEquals(f, r, "Expected " + Decimal64Flyweight.toString(f) + ", Value="
+			+ Decimal64Flyweight.toString(r));
 	}
 
 	@Test
 	public void checkConstruction()
 	{
-        assertNotEquals(DecimalFlyweight.NAN, 0);
+        assertNotEquals(Decimal64Flyweight.NAN, 0);
 
 		final MutableDecimal decimal = new MutableDecimal();
 		assertEquals(0, decimal.mantissa());
@@ -179,17 +175,17 @@ public class TestFixedDecimal
 		assertTrue(new MutableDecimal(1, 50).isNaN());
 		final MutableDecimal value = new MutableDecimal().fromLongBits(0);
 		assertEquals(MutableDecimal.ZERO, value);
-		assertEquals(Decimal.ZERO, Decimal.fromLongBits(0));
-		assertTrue(new Decimal(1, 50).isNaN());
+		assertEquals(Decimal64.ZERO, Decimal64.fromLongBits(0));
+		assertTrue(new Decimal64(1, 50).isNaN());
 
-		assertTrue(Decimal.ZERO.equals(new Decimal(Decimal.ZERO)));
-		assertTrue(Decimal.NAN.equals(new Decimal(Decimal.NAN)));
+		assertTrue(Decimal64.ZERO.equals(new Decimal64(Decimal64.ZERO)));
+		assertTrue(Decimal64.NAN.equals(new Decimal64(Decimal64.NAN)));
 		
 		assertTrue(MutableDecimal.ZERO.equals(new MutableDecimal(MutableDecimal.ZERO)));
 		assertTrue(MutableDecimal.NAN.equals(new MutableDecimal(MutableDecimal.NAN)));
 		
-		assertEquals(DecimalFlyweight.NAN, DecimalFlyweight.valueOf(1, -8));
-		assertEquals(DecimalFlyweight.NAN, DecimalFlyweight.valueOf(DecimalFlyweight.MANTISSA_MAX, 3));
+		assertEquals(Decimal64Flyweight.NAN, Decimal64Flyweight.valueOf(1, -8));
+		assertEquals(Decimal64Flyweight.NAN, Decimal64Flyweight.valueOf(Decimal64Flyweight.MANTISSA_MAX, 3));
 	}
 
 	/*
@@ -206,16 +202,16 @@ public class TestFixedDecimal
 	@Test
 	public void checkAddition()
 	{
-		add(of(DecimalFlyweight.MANTISSA_MIN+1, 0), of(-1, 0), of(DecimalFlyweight.MANTISSA_MIN, 0));
-		add(of(DecimalFlyweight.MANTISSA_MAX, 0), of(DecimalFlyweight.MANTISSA_MIN, 0), of(1, 0));
-		add(of(DecimalFlyweight.MANTISSA_MAX, 0), of(DecimalFlyweight.MANTISSA_MAX, 0), DecimalFlyweight.NAN);
-		add(of(DecimalFlyweight.MANTISSA_MAX, 0), of(1, 0), DecimalFlyweight.NAN);
-		add(of(DecimalFlyweight.MANTISSA_MIN, 0), of(-1, 0), DecimalFlyweight.NAN);
+		add(of(Decimal64Flyweight.MANTISSA_MIN+1, 0), of(-1, 0), of(Decimal64Flyweight.MANTISSA_MIN, 0));
+		add(of(Decimal64Flyweight.MANTISSA_MAX, 0), of(Decimal64Flyweight.MANTISSA_MIN, 0), of(1, 0));
+		add(of(Decimal64Flyweight.MANTISSA_MAX, 0), of(Decimal64Flyweight.MANTISSA_MAX, 0), Decimal64Flyweight.NAN);
+		add(of(Decimal64Flyweight.MANTISSA_MAX, 0), of(1, 0), Decimal64Flyweight.NAN);
+		add(of(Decimal64Flyweight.MANTISSA_MIN, 0), of(-1, 0), Decimal64Flyweight.NAN);
 		
-		add(of(DecimalFlyweight.MANTISSA_MAX-1, 0), of(1, 0), of(DecimalFlyweight.MANTISSA_MAX, 0));
+		add(of(Decimal64Flyweight.MANTISSA_MAX-1, 0), of(1, 0), of(Decimal64Flyweight.MANTISSA_MAX, 0));
 
-		add(of(DecimalFlyweight.MANTISSA_MAX/2, 0), of(DecimalFlyweight.MANTISSA_MAX/2, 0),
-				of(DecimalFlyweight.MANTISSA_MAX/2*2, 0));
+		add(of(Decimal64Flyweight.MANTISSA_MAX/2, 0), of(Decimal64Flyweight.MANTISSA_MAX/2, 0),
+				of(Decimal64Flyweight.MANTISSA_MAX/2*2, 0));
 
 		add(of(100_000_000_000_000000L, -6), of(200_000_000_000_0000L, -4), of(300_000_000_000_000000L, -6));
 		add(of(-100_000_000_000_000000L, -6), of(200_000_000_000_0000L, -4), of(100_000_000_000_000000L, -6));
@@ -231,15 +227,15 @@ public class TestFixedDecimal
 		add(of(1, 2), of(-1, 0), of(99, 0));
 		add(of(10_00, -2), of(5, -1), of(10_50, -2));
 		add(of(10_00, -2), of(-50, -4), of(9_9950, -4));
-		add(DecimalFlyweight.NAN, DecimalFlyweight.valueOf(3, 0), DecimalFlyweight.NAN);
-		add(DecimalFlyweight.valueOf(100, -2), DecimalFlyweight.NAN, DecimalFlyweight.NAN);
+		add(Decimal64Flyweight.NAN, Decimal64Flyweight.valueOf(3, 0), Decimal64Flyweight.NAN);
+		add(Decimal64Flyweight.valueOf(100, -2), Decimal64Flyweight.NAN, Decimal64Flyweight.NAN);
 	}
 
 	@Test
 	public void checkSubtraction()
 	{
-		subtract(DecimalFlyweight.NAN, of(1, 2), DecimalFlyweight.NAN);
-		subtract(of(1, 2), DecimalFlyweight.NAN, DecimalFlyweight.NAN);
+		subtract(Decimal64Flyweight.NAN, of(1, 2), Decimal64Flyweight.NAN);
+		subtract(of(1, 2), Decimal64Flyweight.NAN, Decimal64Flyweight.NAN);
 		
 		subtract(of(1, 2), of(1, 0), of(99, 0));
 		subtract(of(10_00, -2), of(50, -4), of(9_9950, -4));
@@ -250,13 +246,13 @@ public class TestFixedDecimal
 	@Test
 	public void checkUnaryMinus()
 	{
-		assertEquals(DecimalFlyweight.NAN, DecimalFlyweight.minus(DecimalFlyweight.NAN));
-		assertEquals(DecimalFlyweight.valueOf(-1, 2), DecimalFlyweight.minus(DecimalFlyweight.valueOf(1, 2)));
-		assertEquals(DecimalFlyweight.valueOf(1, 2), DecimalFlyweight.minus(DecimalFlyweight.valueOf(-1, 2)));
+		assertEquals(Decimal64Flyweight.NAN, Decimal64Flyweight.minus(Decimal64Flyweight.NAN));
+		assertEquals(Decimal64Flyweight.valueOf(-1, 2), Decimal64Flyweight.minus(Decimal64Flyweight.valueOf(1, 2)));
+		assertEquals(Decimal64Flyweight.valueOf(1, 2), Decimal64Flyweight.minus(Decimal64Flyweight.valueOf(-1, 2)));
 
-		assertEquals(Decimal.valueOf(-1, 2), Decimal.valueOf(1, 2).minus());
-		assertEquals(Decimal.valueOf(1, 2), Decimal.valueOf(-1, 2).minus());
-		assertEquals(Decimal.NAN, Decimal.NAN.minus());
+		assertEquals(Decimal64.valueOf(-1, 2), Decimal64.valueOf(1, 2).minus());
+		assertEquals(Decimal64.valueOf(1, 2), Decimal64.valueOf(-1, 2).minus());
+		assertEquals(Decimal64.NAN, Decimal64.NAN.minus());
 
 		assertEquals(MutableDecimal.valueOf(-1, 2), MutableDecimal.valueOf(1, 2).minus());
 		assertEquals(MutableDecimal.valueOf(1, 2), MutableDecimal.valueOf(-1, 2).minus());
@@ -267,7 +263,7 @@ public class TestFixedDecimal
 	@Test
 	public void checkMultiplication()
 	{
-		multiply(DecimalFlyweight.NAN, 0, DecimalFlyweight.NAN);
+		multiply(Decimal64Flyweight.NAN, 0, Decimal64Flyweight.NAN);
 
 		multiply(of(2, -2), of(1, -2), of(0, -2));
 
@@ -280,10 +276,10 @@ public class TestFixedDecimal
 
 		multiply(of(1300_5000, -4), of(1, -4), of(1301, -4));
 
-		multiply(of(DecimalFlyweight.MANTISSA_MAX / 100, -1), of(10_0, -1),
-				of(DecimalFlyweight.MANTISSA_MAX / 100 * 10, -1));
-		multiply(of(-DecimalFlyweight.MANTISSA_MAX / 100, -1), of(10_0, -1),
-				of(-DecimalFlyweight.MANTISSA_MAX / 100 * 10, -1));
+		multiply(of(Decimal64Flyweight.MANTISSA_MAX / 100, -1), of(10_0, -1),
+				of(Decimal64Flyweight.MANTISSA_MAX / 100 * 10, -1));
+		multiply(of(-Decimal64Flyweight.MANTISSA_MAX / 100, -1), of(10_0, -1),
+				of(-Decimal64Flyweight.MANTISSA_MAX / 100 * 10, -1));
 
 		multiply(of(5_000_000_000_000L, 0), of(400_000, 0), of(2_000_000_000_000_000_000L, 0));
 
@@ -297,8 +293,8 @@ public class TestFixedDecimal
 
 		multiply(of(100_000_000_123456L, -6), of(1_125555, -6), of(112_555_500_138957L, -6));
 
-		multiply(of(DecimalFlyweight.MANTISSA_MAX, 0), of(1, 0),
-				of(DecimalFlyweight.MANTISSA_MAX, 0));
+		multiply(of(Decimal64Flyweight.MANTISSA_MAX, 0), of(1, 0),
+				of(Decimal64Flyweight.MANTISSA_MAX, 0));
 
 		multiply(of(4_897, -3), of(100, -3), of(490, -3));
 		multiply(of(4_897, -3), of(10_000, -3), of(48_970, -3));
@@ -314,10 +310,10 @@ public class TestFixedDecimal
 	@Test
 	public void checkDivision()
 	{
-		divide(of(10, 0), 0, DecimalFlyweight.NAN);
-		divide(of(10, 0), of(0, 3), DecimalFlyweight.NAN);
-		divide(DecimalFlyweight.NAN, of(1, 0), DecimalFlyweight.NAN);
-		divide(of(1, 0), DecimalFlyweight.NAN, DecimalFlyweight.NAN);
+		divide(of(10, 0), 0, Decimal64Flyweight.NAN);
+		divide(of(10, 0), of(0, 3), Decimal64Flyweight.NAN);
+		divide(Decimal64Flyweight.NAN, of(1, 0), Decimal64Flyweight.NAN);
+		divide(of(1, 0), Decimal64Flyweight.NAN, Decimal64Flyweight.NAN);
 
 		divide(of(12_000005, -6), of(10_000000, -6), of(1_200001, -6));
 		divide(of(-12_000005, -6), of(10_000000, -6), of(-1_200001, -6));
@@ -344,25 +340,25 @@ public class TestFixedDecimal
 		divide(of(1, 0), of(2, 0), of(1, 0));
 		divide(of(1, 0), of(20, -1), of(5, -1));
 
-		divide(of(DecimalFlyweight.MANTISSA_MAX, 0), of(1, 0),
-				of(DecimalFlyweight.MANTISSA_MAX, 0));
-		divide(of(DecimalFlyweight.MANTISSA_MAX, -7), of(1, -1), DecimalFlyweight.NAN);
-		divide(of(DecimalFlyweight.MANTISSA_MAX, -6), of(1, -2), DecimalFlyweight.NAN);
-		divide(of(DecimalFlyweight.MANTISSA_MAX, -5), of(1, -3), DecimalFlyweight.NAN);
+		divide(of(Decimal64Flyweight.MANTISSA_MAX, 0), of(1, 0),
+				of(Decimal64Flyweight.MANTISSA_MAX, 0));
+		divide(of(Decimal64Flyweight.MANTISSA_MAX, -7), of(1, -1), Decimal64Flyweight.NAN);
+		divide(of(Decimal64Flyweight.MANTISSA_MAX, -6), of(1, -2), Decimal64Flyweight.NAN);
+		divide(of(Decimal64Flyweight.MANTISSA_MAX, -5), of(1, -3), Decimal64Flyweight.NAN);
 		divide(of(10_000, -3), of(1, -3), of(10_000_000, -3));
 
-		divide(of(DecimalFlyweight.MANTISSA_MIN / 10, -1), of(1, -1),
-				of(DecimalFlyweight.MANTISSA_MIN / 10 * 10, -1));
-		divide(of(DecimalFlyweight.MANTISSA_MIN / 100, -2), of(1, -1),
-				of(DecimalFlyweight.MANTISSA_MIN / 100 * 10, -2));
-		divide(of(DecimalFlyweight.MANTISSA_MIN / 10, -1), of(1, -1),
-				of(DecimalFlyweight.MANTISSA_MIN / 10 * 10, -1));
-		divide(of(DecimalFlyweight.MANTISSA_MIN / 100, -2), of(1, -1),
-				of(DecimalFlyweight.MANTISSA_MIN / 100 * 10, -2));
+		divide(of(Decimal64Flyweight.MANTISSA_MIN / 10, -1), of(1, -1),
+				of(Decimal64Flyweight.MANTISSA_MIN / 10 * 10, -1));
+		divide(of(Decimal64Flyweight.MANTISSA_MIN / 100, -2), of(1, -1),
+				of(Decimal64Flyweight.MANTISSA_MIN / 100 * 10, -2));
+		divide(of(Decimal64Flyweight.MANTISSA_MIN / 10, -1), of(1, -1),
+				of(Decimal64Flyweight.MANTISSA_MIN / 10 * 10, -1));
+		divide(of(Decimal64Flyweight.MANTISSA_MIN / 100, -2), of(1, -1),
+				of(Decimal64Flyweight.MANTISSA_MIN / 100 * 10, -2));
 
-		divide(of(DecimalFlyweight.MANTISSA_MAX, -3), of(1, -5), DecimalFlyweight.NAN);
-		divide(of(DecimalFlyweight.MANTISSA_MAX, -2), of(1, -6), DecimalFlyweight.NAN);
-		divide(of(DecimalFlyweight.MANTISSA_MAX, -1), of(1, -7), DecimalFlyweight.NAN);
+		divide(of(Decimal64Flyweight.MANTISSA_MAX, -3), of(1, -5), Decimal64Flyweight.NAN);
+		divide(of(Decimal64Flyweight.MANTISSA_MAX, -2), of(1, -6), Decimal64Flyweight.NAN);
+		divide(of(Decimal64Flyweight.MANTISSA_MAX, -1), of(1, -7), Decimal64Flyweight.NAN);
 
 		divide(of(4897, -3), of(10, 0), of(490, -3));
 		divide(of(-4897, -3), of(10, 0), of(-490, -3));
@@ -380,47 +376,47 @@ public class TestFixedDecimal
 	@Test
 	public void checkMantissaAndExponent()
 	{
-		assertEquals(100_50, DecimalFlyweight.mantissa(of(100_50, -2)));
-		assertEquals(110_50, DecimalFlyweight.mantissa(of(110_50, -2)));
-		assertEquals(DecimalFlyweight.NAN, of(DecimalFlyweight.MANTISSA_ERROR, 0));
-		assertEquals(-2, DecimalFlyweight.exponent(of(100_50, -2)));
-		assertEquals(0, DecimalFlyweight.exponent(of(100_50, 5)));
+		assertEquals(100_50, Decimal64Flyweight.mantissa(of(100_50, -2)));
+		assertEquals(110_50, Decimal64Flyweight.mantissa(of(110_50, -2)));
+		assertEquals(Decimal64Flyweight.NAN, of(Decimal64Flyweight.MANTISSA_ERROR, 0));
+		assertEquals(-2, Decimal64Flyweight.exponent(of(100_50, -2)));
+		assertEquals(0, Decimal64Flyweight.exponent(of(100_50, 5)));
 	}
 
 	@Test
 	public void checkCompareTo()
 	{
-		assertEquals(1, new Decimal(0, 0).compareTo(null));
-		assertEquals(-1, new Decimal(-1, 0).compareTo(Decimal.ZERO));
-		assertEquals(0, new Decimal(0, 0).compareTo(Decimal.ZERO));
-		assertEquals(1, new Decimal(1, 0).compareTo(Decimal.ZERO));
+		assertEquals(1, new Decimal64(0, 0).compareTo(null));
+		assertEquals(-1, new Decimal64(-1, 0).compareTo(Decimal64.ZERO));
+		assertEquals(0, new Decimal64(0, 0).compareTo(Decimal64.ZERO));
+		assertEquals(1, new Decimal64(1, 0).compareTo(Decimal64.ZERO));
 		
 		assertEquals(1, new MutableDecimal(0, 0).compareTo(null));
 		assertEquals(-1, new MutableDecimal(-1, 0).compareTo(MutableDecimal.ZERO));
 		assertEquals(0, new MutableDecimal(0, 0).compareTo(MutableDecimal.ZERO));
 		assertEquals(1, new MutableDecimal(1, 0).compareTo(MutableDecimal.ZERO));
 		
-		assertEquals(1, DecimalFlyweight.compareTo(0, DecimalFlyweight.NAN));
-		assertEquals(0, DecimalFlyweight.compareTo(DecimalFlyweight.NAN, DecimalFlyweight.NAN));
+		assertEquals(1, Decimal64Flyweight.compareTo(0, Decimal64Flyweight.NAN));
+		assertEquals(0, Decimal64Flyweight.compareTo(Decimal64Flyweight.NAN, Decimal64Flyweight.NAN));
 
-		assertEquals(0, DecimalFlyweight.compareTo(of(0, 0), of(0, 0)));
-		assertEquals(-1, DecimalFlyweight.compareTo(of(100, 0), of(200, 0)));
-		assertEquals(-1, DecimalFlyweight.compareTo(of(100, -1), of(200, -1)));
-		assertEquals(-1, DecimalFlyweight.compareTo(of(-100, 0), of(-20, 0)));
-		assertEquals(-1, DecimalFlyweight.compareTo(of(-100, -1), of(-20, -1)));
-		assertEquals(-1, DecimalFlyweight.compareTo(of(100, -3), of(20, -1)));
-		assertEquals(-1, DecimalFlyweight.compareTo(of(-100, -3), of(20, -1)));
+		assertEquals(0, Decimal64Flyweight.compareTo(of(0, 0), of(0, 0)));
+		assertEquals(-1, Decimal64Flyweight.compareTo(of(100, 0), of(200, 0)));
+		assertEquals(-1, Decimal64Flyweight.compareTo(of(100, -1), of(200, -1)));
+		assertEquals(-1, Decimal64Flyweight.compareTo(of(-100, 0), of(-20, 0)));
+		assertEquals(-1, Decimal64Flyweight.compareTo(of(-100, -1), of(-20, -1)));
+		assertEquals(-1, Decimal64Flyweight.compareTo(of(100, -3), of(20, -1)));
+		assertEquals(-1, Decimal64Flyweight.compareTo(of(-100, -3), of(20, -1)));
 
-		assertEquals(1, DecimalFlyweight.compareTo(of(300, 0), of(200, 0)));
-		assertEquals(1, DecimalFlyweight.compareTo(of(300, -1), of(200, -1)));
-		assertEquals(1, DecimalFlyweight.compareTo(of(-100, 0), of(-200, 0)));
-		assertEquals(1, DecimalFlyweight.compareTo(of(-100, -1), of(-200, -1)));
-		assertEquals(1, DecimalFlyweight.compareTo(of(-100, -4), of(-20, -2)));
+		assertEquals(1, Decimal64Flyweight.compareTo(of(300, 0), of(200, 0)));
+		assertEquals(1, Decimal64Flyweight.compareTo(of(300, -1), of(200, -1)));
+		assertEquals(1, Decimal64Flyweight.compareTo(of(-100, 0), of(-200, 0)));
+		assertEquals(1, Decimal64Flyweight.compareTo(of(-100, -1), of(-200, -1)));
+		assertEquals(1, Decimal64Flyweight.compareTo(of(-100, -4), of(-20, -2)));
 
-		assertEquals(-1, DecimalFlyweight.compareTo(of(1, 2), of(1, 3)));
-		assertEquals(1, DecimalFlyweight.compareTo(of(123_000, -3), of(1, 2)));
-		assertEquals(1, DecimalFlyweight.compareTo(of(1, 2), of(123_000, -3)));
-		assertEquals(0, DecimalFlyweight.compareTo(of(123, 0), of(123_000, -3)));
+		assertEquals(-1, Decimal64Flyweight.compareTo(of(1, 2), of(1, 3)));
+		assertEquals(1, Decimal64Flyweight.compareTo(of(123_000, -3), of(1, 2)));
+		assertEquals(1, Decimal64Flyweight.compareTo(of(1, 2), of(123_000, -3)));
+		assertEquals(0, Decimal64Flyweight.compareTo(of(123, 0), of(123_000, -3)));
 	}
 
 	@Test
@@ -458,8 +454,8 @@ public class TestFixedDecimal
             assertEquals(new MutableDecimal(100, 1), new MutableDecimal(1000, 0));
 		}
 		{
-			final Decimal value = new Decimal(1, 2);
-			final Decimal same = value;
+			final Decimal64 value = new Decimal64(1, 2);
+			final Decimal64 same = value;
 
             assertNotEquals(null, value);
             assertEquals(value, value);
@@ -470,36 +466,36 @@ public class TestFixedDecimal
 			assertEquals(value.hashCode(), same.hashCode());
 
             assertEquals(same, value);
-			final Decimal another = new Decimal(1, 2);
+			final Decimal64 another = new Decimal64(1, 2);
             assertEquals(another, value);
             assertEquals(value, another);
 			assertEquals(another.hashCode(), value.hashCode());
 
-			final Decimal x = new Decimal(314, -2);
-			final Decimal y = new Decimal(314, -2);
-			final Decimal z = new Decimal(314, -2);
+			final Decimal64 x = new Decimal64(314, -2);
+			final Decimal64 y = new Decimal64(314, -2);
+			final Decimal64 z = new Decimal64(314, -2);
 
 			assertTrue(x.equals(y) && y.equals(x));
 			assertTrue(y.equals(z) && z.equals(y));
 			assertTrue(x.equals(z) && z.equals(x));
 
-            assertNotEquals(new Decimal(101, 0), new Decimal(10100, -2));
-            assertNotEquals(new Decimal(101, 0).hashCode(), new Decimal(10100, -2).hashCode());
-            assertEquals(new Decimal(100, 1), new Decimal(1000, 0));
+            assertNotEquals(new Decimal64(101, 0), new Decimal64(10100, -2));
+            assertNotEquals(new Decimal64(101, 0).hashCode(), new Decimal64(10100, -2).hashCode());
+            assertEquals(new Decimal64(100, 1), new Decimal64(1000, 0));
 		}
 	}
 
 	@Test
 	public void checkToString()
 	{
-		assertEquals("100.0001", DecimalFlyweight.toString(DecimalFlyweight.valueOf(100_0001, -4)));
-		assertEquals("NaN", DecimalFlyweight.toString(DecimalFlyweight.NAN));
+		assertEquals("100.0001", Decimal64Flyweight.toString(Decimal64Flyweight.valueOf(100_0001, -4)));
+		assertEquals("NaN", Decimal64Flyweight.toString(Decimal64Flyweight.NAN));
 
-		assertEquals("0.001", DecimalFlyweight.toString(DecimalFlyweight.valueOf(1, -3)));
-		assertEquals("1000", DecimalFlyweight.toString(DecimalFlyweight.valueOf(1, 3)));
+		assertEquals("0.001", Decimal64Flyweight.toString(Decimal64Flyweight.valueOf(1, -3)));
+		assertEquals("1000", Decimal64Flyweight.toString(Decimal64Flyweight.valueOf(1, 3)));
 
 		assertEquals("3.14159", new MutableDecimal(314159, -5).toString());
-		assertEquals("3.14159", new Decimal(314159, -5).toString());
+		assertEquals("3.14159", new Decimal64(314159, -5).toString());
 	}
 
 	// toLongBits, fromLongBits
@@ -507,36 +503,36 @@ public class TestFixedDecimal
 	@Test
 	public void checkConversions()
 	{
-		assertEquals(3.1415926F, DecimalFlyweight.floatValue(of(31415926, -7)), 0.00000001F);
-		assertEquals(-3.1415926F, DecimalFlyweight.floatValue(of(-31415926, -7)), 0.00000001F);
+		assertEquals(3.1415926F, Decimal64Flyweight.floatValue(of(31415926, -7)), 0.00000001F);
+		assertEquals(-3.1415926F, Decimal64Flyweight.floatValue(of(-31415926, -7)), 0.00000001F);
 
-		assertEquals(3.1415926D, DecimalFlyweight.doubleValue(of(31415926, -7)), 0.00000001D);
-		assertEquals(-3.1415926D, DecimalFlyweight.doubleValue(of(-31415926, -7)), 0.00000001D);
+		assertEquals(3.1415926D, Decimal64Flyweight.doubleValue(of(31415926, -7)), 0.00000001D);
+		assertEquals(-3.1415926D, Decimal64Flyweight.doubleValue(of(-31415926, -7)), 0.00000001D);
 
-		assertEquals(3, DecimalFlyweight.longValue(of(31415926, -7)));
-		assertEquals(-3, DecimalFlyweight.longValue(of(-31415926, -7)));
+		assertEquals(3, Decimal64Flyweight.longValue(of(31415926, -7)));
+		assertEquals(-3, Decimal64Flyweight.longValue(of(-31415926, -7)));
 	}
 
 	private static void round(final long a, final int b, final DecimalRounding mode,
 			final long c)
 	{
-		System.out.format("%de%d, round(%s, %d) = %s%n", DecimalFlyweight.mantissa(c),
-				DecimalFlyweight.exponent(c), DecimalFlyweight.toString(a), b,
-				DecimalFlyweight.toString(c));
-		final long r = DecimalFlyweight.round(a, b, mode);
-		assertEquals(r, c, "Expected " + DecimalFlyweight.toString(c) + ", Value="
-			+ DecimalFlyweight.toString(r));
+		System.out.format("%de%d, round(%s, %d) = %s%n", Decimal64Flyweight.mantissa(c),
+				Decimal64Flyweight.exponent(c), Decimal64Flyweight.toString(a), b,
+				Decimal64Flyweight.toString(c));
+		final long r = Decimal64Flyweight.round(a, b, mode);
+		assertEquals(r, c, "Expected " + Decimal64Flyweight.toString(c) + ", Value="
+			+ Decimal64Flyweight.toString(r));
 
 		{
-			final Decimal a1 = Decimal.valueOf(DecimalFlyweight.mantissa(a), DecimalFlyweight.exponent(a));
-			final Decimal r1 = a1.round(b, mode);
-			assertEquals(r1.toLongBits(), c, "Expected " + DecimalFlyweight.toString(c) + ", Value=" + r1);
+			final Decimal64 a1 = Decimal64.valueOf(Decimal64Flyweight.mantissa(a), Decimal64Flyweight.exponent(a));
+			final Decimal64 r1 = a1.round(b, mode);
+			assertEquals(r1.toLongBits(), c, "Expected " + Decimal64Flyweight.toString(c) + ", Value=" + r1);
 		}
 		{
-			final MutableDecimal a1 = MutableDecimal.valueOf(DecimalFlyweight.mantissa(a),
-					DecimalFlyweight.exponent(a));
+			final MutableDecimal a1 = MutableDecimal.valueOf(Decimal64Flyweight.mantissa(a),
+					Decimal64Flyweight.exponent(a));
 			a1.round(b, mode);
-			assertEquals( a1.toLongBits(), c, "Expected " + DecimalFlyweight.toString(c) + ", Value=" + a);
+			assertEquals( a1.toLongBits(), c, "Expected " + Decimal64Flyweight.toString(c) + ", Value=" + a);
 		}
 	}
 
@@ -593,22 +589,22 @@ public class TestFixedDecimal
 		round(of(99_9995, -4), 3, DecimalRounding.DOWN, of(99_999, -3));
 		round(of(99_9999, -4), 3, DecimalRounding.DOWN, of(99_999, -3));
 
-		round(DecimalFlyweight.NAN, 3, DecimalRounding.UP, DecimalFlyweight.NAN);
-		round(DecimalFlyweight.NAN, 3, DecimalRounding.DOWN, DecimalFlyweight.NAN);
+		round(Decimal64Flyweight.NAN, 3, DecimalRounding.UP, Decimal64Flyweight.NAN);
+		round(Decimal64Flyweight.NAN, 3, DecimalRounding.DOWN, Decimal64Flyweight.NAN);
 	}
 
 	@Test
 	public void checkZero()
 	{
-		assertFalse(DecimalFlyweight.isZero(DecimalFlyweight.NAN));
-		assertTrue(DecimalFlyweight.isZero(of(0, 0)));
-		assertTrue(DecimalFlyweight.isZero(of(0, -3)));
-		assertFalse(DecimalFlyweight.isZero(of(1, 0)));
+		assertFalse(Decimal64Flyweight.isZero(Decimal64Flyweight.NAN));
+		assertTrue(Decimal64Flyweight.isZero(of(0, 0)));
+		assertTrue(Decimal64Flyweight.isZero(of(0, -3)));
+		assertFalse(Decimal64Flyweight.isZero(of(1, 0)));
 		
-		assertFalse(Decimal.NAN.isZero());
-		assertTrue(Decimal.ZERO.isZero());
-		assertTrue(Decimal.valueOf(0, -3).isZero());
-		assertFalse(Decimal.valueOf(1, 0).isZero());
+		assertFalse(Decimal64.NAN.isZero());
+		assertTrue(Decimal64.ZERO.isZero());
+		assertTrue(Decimal64.valueOf(0, -3).isZero());
+		assertFalse(Decimal64.valueOf(1, 0).isZero());
 
 		assertFalse(MutableDecimal.NAN.isZero());
 		assertTrue(MutableDecimal.ZERO.isZero());
@@ -619,15 +615,15 @@ public class TestFixedDecimal
 	@Test
 	public void checkNAN()
 	{
-		assertTrue(DecimalFlyweight.isNaN(DecimalFlyweight.NAN));
-		assertFalse(DecimalFlyweight.isNaN(of(0, 0)));
-		assertFalse(DecimalFlyweight.isNaN(of(0, -3)));
-		assertFalse(DecimalFlyweight.isNaN(of(1, 0)));
+		assertTrue(Decimal64Flyweight.isNaN(Decimal64Flyweight.NAN));
+		assertFalse(Decimal64Flyweight.isNaN(of(0, 0)));
+		assertFalse(Decimal64Flyweight.isNaN(of(0, -3)));
+		assertFalse(Decimal64Flyweight.isNaN(of(1, 0)));
 		
-		assertTrue(Decimal.NAN.isNaN());
-		assertFalse(Decimal.ZERO.isNaN());
-		assertFalse(Decimal.valueOf(0, -3).isNaN());
-		assertFalse(Decimal.valueOf(1, 0).isNaN());
+		assertTrue(Decimal64.NAN.isNaN());
+		assertFalse(Decimal64.ZERO.isNaN());
+		assertFalse(Decimal64.valueOf(0, -3).isNaN());
+		assertFalse(Decimal64.valueOf(1, 0).isNaN());
 
 		assertTrue(MutableDecimal.NAN.isNaN());
 		assertFalse(MutableDecimal.ZERO.isNaN());
@@ -642,128 +638,128 @@ public class TestFixedDecimal
 		parse(of(4345, -3), "4.345");
 		parse(of(1, -3), "0.001");
 		parse(of(-4345, -3), "-4.345");
-		parse(DecimalFlyweight.NAN, "-4.34X5");
-		parse(DecimalFlyweight.NAN, "100.");
+		parse(Decimal64Flyweight.NAN, "-4.34X5");
+		parse(Decimal64Flyweight.NAN, "100.");
 		parse(of(1001234, -4), "100.1234");
-		parse(DecimalFlyweight.NAN, "1-00");
-		parse(DecimalFlyweight.NAN, ".100");
+		parse(Decimal64Flyweight.NAN, "1-00");
+		parse(Decimal64Flyweight.NAN, ".100");
 		parse(of(300, 0), "300");
 
-		parse(DecimalFlyweight.NAN, "75.00000001");
-		parse(DecimalFlyweight.NAN, "-75.00000001");
+		parse(Decimal64Flyweight.NAN, "75.00000001");
+		parse(Decimal64Flyweight.NAN, "-75.00000001");
 		parse(of(750000001, -7), "75.0000001");
 		parse(of(-750000001, -7), "-75.0000001");
 
 		parse(of(1152921504606846975L, 0), "1152921504606846975"); // max
 		parse(of(-1152921504606846974L, 0), "-1152921504606846974"); // min
-		parse(DecimalFlyweight.NAN, "1152921504606846976"); // max + 1
-		parse(DecimalFlyweight.NAN, "-1152921504606846975"); // min - 1
+		parse(Decimal64Flyweight.NAN, "1152921504606846976"); // max + 1
+		parse(Decimal64Flyweight.NAN, "-1152921504606846975"); // min - 1
 
 		parse(of(1152921504606846975L, -7), "115292150460.6846975");
 		parse(of(-1152921504606846974L, -7), "-115292150460.6846974");
 		parse(of(1152921504606846975L, -1), "115292150460684697.5");
 		parse(of(-1152921504606846974L, -1), "-115292150460684697.4");
 
-		assertEquals(DecimalFlyweight.NAN, DecimalFlyweight.valueOf("1e2"));
-		assertEquals(DecimalFlyweight.NAN, DecimalFlyweight.valueOf("1e-2"));
-		assertEquals(DecimalFlyweight.NAN, DecimalFlyweight.valueOf("1.02e3"));
-		assertEquals(DecimalFlyweight.NAN, DecimalFlyweight.valueOf("1.1e-4"));
+		assertEquals(Decimal64Flyweight.NAN, Decimal64Flyweight.valueOf("1e2"));
+		assertEquals(Decimal64Flyweight.NAN, Decimal64Flyweight.valueOf("1e-2"));
+		assertEquals(Decimal64Flyweight.NAN, Decimal64Flyweight.valueOf("1.02e3"));
+		assertEquals(Decimal64Flyweight.NAN, Decimal64Flyweight.valueOf("1.1e-4"));
 		
 		parse(0, "-0");
 		parse(of(0, -3), "0.000");
-		parse(DecimalFlyweight.NAN, "-");
-		parse(DecimalFlyweight.NAN, "");
-		parse(DecimalFlyweight.NAN, null);
-		parse(DecimalFlyweight.NAN, "100.100.00");
-		parse(DecimalFlyweight.NAN, "9223372036854775807.0");
-		parse(DecimalFlyweight.NAN, "-9223372036854775807.0");
+		parse(Decimal64Flyweight.NAN, "-");
+		parse(Decimal64Flyweight.NAN, "");
+		parse(Decimal64Flyweight.NAN, null);
+		parse(Decimal64Flyweight.NAN, "100.100.00");
+		parse(Decimal64Flyweight.NAN, "9223372036854775807.0");
+		parse(Decimal64Flyweight.NAN, "-9223372036854775807.0");
 
-		assertEquals(Decimal.valueOf(123501, -3), Decimal.valueOf("123.501"));
+		assertEquals(Decimal64.valueOf(123501, -3), Decimal64.valueOf("123.501"));
 		assertEquals(MutableDecimal.valueOf(123501, -3), MutableDecimal.valueOf("123.501"));
 		
-		assertEquals(DecimalFlyweight.NAN, DecimalFlyweight.valueOf("ABC"));
-		assertEquals(DecimalFlyweight.NAN, DecimalFlyweight.valueOf("nan"));
-		assertEquals(DecimalFlyweight.NAN, DecimalFlyweight.valueOf("NAN"));
+		assertEquals(Decimal64Flyweight.NAN, Decimal64Flyweight.valueOf("ABC"));
+		assertEquals(Decimal64Flyweight.NAN, Decimal64Flyweight.valueOf("nan"));
+		assertEquals(Decimal64Flyweight.NAN, Decimal64Flyweight.valueOf("NAN"));
 	}
 
 	@Test
 	public void checkValuesOf()
 	{
-		final long value1 = DecimalFlyweight.valueOf(0.00015D, 5);
-		assertEquals(15, DecimalFlyweight.mantissa(value1));
-		assertEquals(-5, DecimalFlyweight.exponent(value1));
+		final long value1 = Decimal64Flyweight.valueOf(0.00015D, 5);
+		assertEquals(15, Decimal64Flyweight.mantissa(value1));
+		assertEquals(-5, Decimal64Flyweight.exponent(value1));
 
-		final long value2 = DecimalFlyweight.valueOf(0.3D, 4);
-		assertEquals(3000, DecimalFlyweight.mantissa(value2));
-		assertEquals(-4, DecimalFlyweight.exponent(value2));
+		final long value2 = Decimal64Flyweight.valueOf(0.3D, 4);
+		assertEquals(3000, Decimal64Flyweight.mantissa(value2));
+		assertEquals(-4, Decimal64Flyweight.exponent(value2));
 
-		final long value3 = DecimalFlyweight.valueOf(213.456D, 4);
-		assertEquals(2134560, DecimalFlyweight.mantissa(value3));
-		assertEquals(-4, DecimalFlyweight.exponent(value3));
+		final long value3 = Decimal64Flyweight.valueOf(213.456D, 4);
+		assertEquals(2134560, Decimal64Flyweight.mantissa(value3));
+		assertEquals(-4, Decimal64Flyweight.exponent(value3));
 
-		final long value4 = DecimalFlyweight.valueOf(-100.0005D, 3);
-		assertEquals(-100001, DecimalFlyweight.mantissa(value4));
-		assertEquals(-3, DecimalFlyweight.exponent(value4));
+		final long value4 = Decimal64Flyweight.valueOf(-100.0005D, 3);
+		assertEquals(-100001, Decimal64Flyweight.mantissa(value4));
+		assertEquals(-3, Decimal64Flyweight.exponent(value4));
 
-		assertEquals(Double.NaN, DecimalFlyweight.doubleValue(DecimalFlyweight.NAN), 0.0001D);
-		assertEquals(Float.NaN, DecimalFlyweight.floatValue(DecimalFlyweight.NAN), 0.0001F);
-		assertEquals(DecimalFlyweight.NAN, DecimalFlyweight.longValue(DecimalFlyweight.NAN));
+		assertEquals(Double.NaN, Decimal64Flyweight.doubleValue(Decimal64Flyweight.NAN), 0.0001D);
+		assertEquals(Float.NaN, Decimal64Flyweight.floatValue(Decimal64Flyweight.NAN), 0.0001F);
+		assertEquals(Decimal64Flyweight.NAN, Decimal64Flyweight.longValue(Decimal64Flyweight.NAN));
 
-		assertEquals(10, DecimalFlyweight.byteValue(DecimalFlyweight.valueOf(10, 0)));
-		assertEquals(10, DecimalFlyweight.shortValue(DecimalFlyweight.valueOf(10, 0)));
-		assertEquals(10, DecimalFlyweight.intValue(DecimalFlyweight.valueOf(10, 0)));
+		assertEquals(10, Decimal64Flyweight.byteValue(Decimal64Flyweight.valueOf(10, 0)));
+		assertEquals(10, Decimal64Flyweight.shortValue(Decimal64Flyweight.valueOf(10, 0)));
+		assertEquals(10, Decimal64Flyweight.intValue(Decimal64Flyweight.valueOf(10, 0)));
 		// there is not good way to represent errors for byte, short and integer
-		assertEquals(8, DecimalFlyweight.byteValue(DecimalFlyweight.NAN));
-		assertEquals(8, DecimalFlyweight.shortValue(DecimalFlyweight.NAN));
-		assertEquals(8, DecimalFlyweight.intValue(DecimalFlyweight.NAN));
+		assertEquals(8, Decimal64Flyweight.byteValue(Decimal64Flyweight.NAN));
+		assertEquals(8, Decimal64Flyweight.shortValue(Decimal64Flyweight.NAN));
+		assertEquals(8, Decimal64Flyweight.intValue(Decimal64Flyweight.NAN));
 
-		assertEquals(8, Decimal.NAN.byteValue());
-		assertEquals(8, Decimal.NAN.shortValue());
-		assertEquals(8, Decimal.NAN.intValue());
-		assertEquals(DecimalFlyweight.NAN, Decimal.NAN.longValue());
-		assertEquals(Float.NaN, Decimal.NAN.floatValue(), 0.00001F);
-		assertEquals(Double.NaN, Decimal.NAN.doubleValue(), 0.00001D);
+		assertEquals(8, Decimal64.NAN.byteValue());
+		assertEquals(8, Decimal64.NAN.shortValue());
+		assertEquals(8, Decimal64.NAN.intValue());
+		assertEquals(Decimal64Flyweight.NAN, Decimal64.NAN.longValue());
+		assertEquals(Float.NaN, Decimal64.NAN.floatValue(), 0.00001F);
+		assertEquals(Double.NaN, Decimal64.NAN.doubleValue(), 0.00001D);
 
 		assertEquals(8, MutableDecimal.NAN.byteValue());
 		assertEquals(8, MutableDecimal.NAN.shortValue());
 		assertEquals(8, MutableDecimal.NAN.intValue());
-		assertEquals(DecimalFlyweight.NAN, MutableDecimal.NAN.longValue());
+		assertEquals(Decimal64Flyweight.NAN, MutableDecimal.NAN.longValue());
 		assertEquals(Float.NaN, MutableDecimal.NAN.floatValue(), 0.00001F);
 		assertEquals(Double.NaN, MutableDecimal.NAN.doubleValue(), 0.00001D);
 
-		assertEquals(Decimal.valueOf(4895, -3), Decimal.valueOf(4.895F, 3));
+		assertEquals(Decimal64.valueOf(4895, -3), Decimal64.valueOf(4.895F, 3));
 		assertEquals(MutableDecimal.valueOf(4895, -3), MutableDecimal.valueOf(4.895D, 3));
 
-		assertEquals(Decimal.NAN, Decimal.valueOf(Double.NaN, 3));
+		assertEquals(Decimal64.NAN, Decimal64.valueOf(Double.NaN, 3));
 		assertEquals(MutableDecimal.NAN, MutableDecimal.valueOf(Double.NaN, 3));
 	}
 
 	@Test
 	public void checkMinus()
 	{
-		assertEquals(of(-100, 0), DecimalFlyweight.minus(of(100, 0)));
+		assertEquals(of(-100, 0), Decimal64Flyweight.minus(of(100, 0)));
 		assertEquals(new MutableDecimal(100, 0), new MutableDecimal(-100, 0).minus());
-		assertEquals(of(200, 5), DecimalFlyweight.minus(of(-200, 5)));
+		assertEquals(of(200, 5), Decimal64Flyweight.minus(of(-200, 5)));
 		assertEquals(new MutableDecimal(200, 5), new MutableDecimal(-200, 5).minus());
 	}
 
 	@Test
 	public void checkAbs()
 	{
-		assertEquals(of(300, -2), DecimalFlyweight.abs(of(-300, -2)));
-		assertEquals(of(150, -2), DecimalFlyweight.abs(of(150, -2)));
+		assertEquals(of(300, -2), Decimal64Flyweight.abs(of(-300, -2)));
+		assertEquals(of(150, -2), Decimal64Flyweight.abs(of(150, -2)));
 
 		assertEquals(MutableDecimal.valueOf(300, -2), MutableDecimal.valueOf(-300, -2).abs());
 		assertEquals(MutableDecimal.valueOf(150, -2), MutableDecimal.valueOf(150, -2).abs());
-		assertEquals(Decimal.valueOf(300, -2), Decimal.valueOf(-300, -2).abs());
-		assertEquals(Decimal.valueOf(150, -2), Decimal.valueOf(150, -2).abs());
+		assertEquals(Decimal64.valueOf(300, -2), Decimal64.valueOf(-300, -2).abs());
+		assertEquals(Decimal64.valueOf(150, -2), Decimal64.valueOf(150, -2).abs());
 	}
 
 	@Test
 	public void mutability()
 	{
-		final Decimal decimal1 = Decimal.valueOf(100_00, -2);
-		final Decimal decimal2 = decimal1.add(Decimal.valueOf(25, 0));
+		final Decimal64 decimal1 = Decimal64.valueOf(100_00, -2);
+		final Decimal64 decimal2 = decimal1.add(Decimal64.valueOf(25, 0));
 
 		assertFalse(decimal1 == decimal2);
 		assertFalse(decimal1.equals(decimal2));

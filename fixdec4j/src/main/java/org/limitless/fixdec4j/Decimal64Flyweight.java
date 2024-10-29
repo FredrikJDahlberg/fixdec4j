@@ -18,7 +18,7 @@ package org.limitless.fixdec4j;
  * represented within the limits above (intermediate values use 128-bit
  * arithmetic when necessary).
  */
-public final class DecimalFlyweight
+public final class Decimal64Flyweight
 {
 	private static final long DECIMAL_BITS = 3;
 	private static final long DECIMAL_MASK = (1L << DECIMAL_BITS) - 1;
@@ -61,8 +61,8 @@ public final class DecimalFlyweight
 			if (inExponent >= 1)
 			{
 				final long scale = Powers10[inExponent];
-				final int bitCount = Unsigned.numberOfBits(Math.abs(mantissa))
-						+ Unsigned.numberOfBits(scale);
+				final int bitCount = Unsigned64Flyweight.numberOfBits(Math.abs(mantissa))
+						+ Unsigned64Flyweight.numberOfBits(scale);
 				valid = bitCount < MANTISSA_BITS;
 				mantissa *= scale;
 				exponent = 0;
@@ -269,22 +269,22 @@ public final class DecimalFlyweight
 
 		final int decimals1 = -exponent(inDecimalFlyweight1);
 		final int decimals2 = -exponent(inDecimalFlyweight2);
-		int mantissaBits1 = Unsigned.numberOfBits(Math.abs(mantissa1));
-		int mantissaBits2 = Unsigned.numberOfBits(Math.abs(mantissa2));
+		int mantissaBits1 = Unsigned64Flyweight.numberOfBits(Math.abs(mantissa1));
+		int mantissaBits2 = Unsigned64Flyweight.numberOfBits(Math.abs(mantissa2));
 
 		if (decimals1 != decimals2)
 		{
 			final long scale = Powers10[Math.abs(decimals1 - decimals2)];
-			final long scaleBits = Unsigned.numberOfBits(scale);
+			final long scaleBits = Unsigned64Flyweight.numberOfBits(scale);
 
 			if (decimals1 < decimals2)
 			{
-				mantissaBits1 += scaleBits;
+				mantissaBits1 += (int) scaleBits;
 				mantissa1 *= scale;
 			}
 			else
 			{
-				mantissaBits2 += scaleBits;
+				mantissaBits2 += (int) scaleBits;
 				mantissa2 *= scale;
 			}
 		}
@@ -374,8 +374,8 @@ public final class DecimalFlyweight
 		final boolean sameSign = inValueMantissa < 0 == inTermMantissa < 0;
 		long valueMantissa = inValueMantissa;
 		long termMantissa = inTermMantissa;
-		int valuePower = Unsigned.numberOfBits(Math.abs(inValueMantissa));
-		int termPower = Unsigned.numberOfBits(Math.abs(inTermMantissa));
+		int valuePower = Unsigned64Flyweight.numberOfBits(Math.abs(inValueMantissa));
+		int termPower = Unsigned64Flyweight.numberOfBits(Math.abs(inTermMantissa));
 		int resultPower = sameSign ? Math.max(valuePower, termPower)
 				: Math.abs(valuePower - termPower);
 		long result = MANTISSA_ERROR;
@@ -394,12 +394,12 @@ public final class DecimalFlyweight
 			if (inValueDecimals < inTermDecimals)
 			{
 				valueMantissa *= scale;
-				valuePower = Unsigned.numberOfBits(Math.abs(valueMantissa));
+				valuePower = Unsigned64Flyweight.numberOfBits(Math.abs(valueMantissa));
 			}
 			else
 			{
 				termMantissa *= scale;
-				termPower = Unsigned.numberOfBits(Math.abs(termMantissa));
+				termPower = Unsigned64Flyweight.numberOfBits(Math.abs(termMantissa));
 			}
 			resultPower = sameSign ? Math.max(valuePower, termPower)
 					: Math.abs(valuePower - termPower);
@@ -466,9 +466,9 @@ public final class DecimalFlyweight
 		final long scaleDiff = Powers10[Math.abs(valueDecimals - factorDecimals)];
 		final long valueMantissa = mantissa(inDecimalFlyweight);
 		final long factorMantissa = mantissa(inFixedFactor);
-		final int valuePower = Unsigned.numberOfBits(Math.abs(valueMantissa));
-		final int factorPower = Unsigned.numberOfBits(Math.abs(factorMantissa));
-		final int scalePower = Unsigned.numberOfBits(scaleDiff);
+		final int valuePower = Unsigned64Flyweight.numberOfBits(Math.abs(valueMantissa));
+		final int factorPower = Unsigned64Flyweight.numberOfBits(Math.abs(factorMantissa));
+		final int scalePower = Unsigned64Flyweight.numberOfBits(scaleDiff);
 		final int decimals = Math.max(valueDecimals, factorDecimals);
 		final long result;
 
@@ -503,23 +503,23 @@ public final class DecimalFlyweight
 		final int divisorDecimals = -exponent(inFixedDivisor);
 		final long dividendMantissa = mantissa(inFixedDividend);
 		final long divisorMantissa = mantissa(inFixedDivisor);
-		int quotientPower2 = Unsigned.numberOfBits(inFixedDividend);
+		int quotientPower2 = Unsigned64Flyweight.numberOfBits(inFixedDividend);
 
 		if (dividendDecimals != divisorDecimals)
 		{
 			if (dividendDecimals < divisorDecimals)
 			{
-				quotientPower2 += Unsigned.numberOfBits(dividendMantissa);
+				quotientPower2 += Unsigned64Flyweight.numberOfBits(dividendMantissa);
 			}
 			else
 			{
-				quotientPower2 += Unsigned.numberOfBits(divisorMantissa);
+				quotientPower2 += Unsigned64Flyweight.numberOfBits(divisorMantissa);
 			}
 		}
 
 		final int decimals = Math.max(dividendDecimals, divisorDecimals);
 		final long scaling = Powers10[decimals + Math.abs(dividendDecimals - divisorDecimals)];
-		quotientPower2 += Unsigned.numberOfBits(scaling);
+		quotientPower2 += Unsigned64Flyweight.numberOfBits(scaling);
 
 		final long quotient;
 		if (quotientPower2 < Long.SIZE)

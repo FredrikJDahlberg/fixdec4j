@@ -2,6 +2,9 @@ package org.limitless.fixdec4j;
 
 import org.openjdk.jmh.annotations.*;
 import org.openjdk.jmh.infra.Blackhole;
+import org.openjdk.jmh.runner.Runner;
+import org.openjdk.jmh.runner.RunnerException;
+import org.openjdk.jmh.runner.options.OptionsBuilder;
 
 @State(Scope.Thread)
 public class DoubleBenchmark {
@@ -70,5 +73,7 @@ public class DoubleBenchmark {
         black.consume( Math.round(10_000D * state.a / state.b) / 10_000D);
     }
 
-
+    public static void main(String[] args) throws RunnerException {
+        new Runner(new OptionsBuilder().include(DoubleBenchmark.class.getSimpleName()).build()).run();
+    }
 }

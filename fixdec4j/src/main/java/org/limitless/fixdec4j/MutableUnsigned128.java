@@ -115,14 +115,14 @@ public final class MutableUnsigned128 implements Comparable<MutableUnsigned128>
 	@Override
 	public int compareTo(final MutableUnsigned128 inValue)
 	{
-		final int highBits = Unsigned.compare(m_highBits, inValue.m_highBits); 
+		final int highBits = Unsigned64Flyweight.compare(m_highBits, inValue.m_highBits);
 		if (highBits != 0)
 		{
 			return highBits;
 		}
 		else
 		{
-			return Unsigned.compare(m_lowBits, inValue.m_lowBits);
+			return Unsigned64Flyweight.compare(m_lowBits, inValue.m_lowBits);
 		}
 	}
 	
@@ -529,16 +529,16 @@ public final class MutableUnsigned128 implements Comparable<MutableUnsigned128>
 		{
 			final long lowBits = m_lowBits;
 			m_highBits = 0;
-			m_lowBits = Unsigned.divide(lowBits, inDivisor.m_lowBits);
+			m_lowBits = Unsigned64Flyweight.divide(lowBits, inDivisor.m_lowBits);
 			inRemainder.m_highBits = 0;
-			inRemainder.m_lowBits = Unsigned.remainder(lowBits, inDivisor.m_lowBits);
+			inRemainder.m_lowBits = Unsigned64Flyweight.remainder(lowBits, inDivisor.m_lowBits);
 		}
 		else if (inDivisor.m_highBits == 0)
 		{
 			final MutableUnsigned128 remainder = new MutableUnsigned128(); 
 			long quotientLow = 0;
 			long quotientHigh = 0;
-			if (Unsigned.compare(m_highBits, inDivisor.m_lowBits) <= -1)
+			if (Unsigned64Flyweight.compare(m_highBits, inDivisor.m_lowBits) <= -1)
 			{
 				// remainder contains quotient and reminder
 				quotientLow = divide(m_highBits, m_lowBits, inDivisor.m_lowBits, remainder);
@@ -546,8 +546,8 @@ public final class MutableUnsigned128 implements Comparable<MutableUnsigned128>
 			}
 			else
 			{
-				quotientHigh = Unsigned.divide(m_highBits, inDivisor.m_lowBits);
-				final long remainderHigh = Unsigned.remainder(m_highBits, inDivisor.m_lowBits);
+				quotientHigh = Unsigned64Flyweight.divide(m_highBits, inDivisor.m_lowBits);
+				final long remainderHigh = Unsigned64Flyweight.remainder(m_highBits, inDivisor.m_lowBits);
 				quotientLow = divide(remainderHigh, m_lowBits, inDivisor.m_lowBits, remainder);
 			}
 			m_highBits = quotientHigh;
@@ -620,16 +620,16 @@ public final class MutableUnsigned128 implements Comparable<MutableUnsigned128>
 
 		final long un1 = un10 >>> Integer.SIZE;
 		final long un0 = un10 & INT_BITS;
-		long q1 = Unsigned.divide(un32, vn1);
-		long rhat = Unsigned.remainder(un32, vn1);
+		long q1 = Unsigned64Flyweight.divide(un32, vn1);
+		long rhat = Unsigned64Flyweight.remainder(un32, vn1);
 		long left = q1 * vn0;
 		long right = (rhat << Integer.SIZE) + un1;
 
-		while (Unsigned.compare(q1, LIMIT) >= 0 || Unsigned.compare(left, right) >= 1)
+		while (Unsigned64Flyweight.compare(q1, LIMIT) >= 0 || Unsigned64Flyweight.compare(left, right) >= 1)
 		{
 			--q1;
 			rhat += vn1;
-			if (Unsigned.compare(rhat, LIMIT) < 0)
+			if (Unsigned64Flyweight.compare(rhat, LIMIT) < 0)
 			{
 				left -= vn0;
 				right = (rhat << Integer.SIZE) | un1;
@@ -641,17 +641,17 @@ public final class MutableUnsigned128 implements Comparable<MutableUnsigned128>
 		}
 
 		final long un21 = (un32 << Integer.SIZE) + (un1 - (q1 * v));
-		long q0 = Unsigned.divide(un21, vn1);
+		long q0 = Unsigned64Flyweight.divide(un21, vn1);
 
-		rhat = Unsigned.remainder(un21, vn1);
+		rhat = Unsigned64Flyweight.remainder(un21, vn1);
 		left = q0 * vn0;
 		right = (rhat << Integer.SIZE) | un0;
 
-		while (Unsigned.compare(q0, LIMIT) >= 0 || Unsigned.compare(left, right) >= 1)
+		while (Unsigned64Flyweight.compare(q0, LIMIT) >= 0 || Unsigned64Flyweight.compare(left, right) >= 1)
 		{
 			--q0;
 			rhat += vn1;
-			if (Unsigned.compare(rhat, LIMIT) < 0)
+			if (Unsigned64Flyweight.compare(rhat, LIMIT) < 0)
 			{
 				left -= vn0;
 				right = (rhat << Integer.SIZE) | un0;

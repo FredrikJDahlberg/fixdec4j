@@ -2,6 +2,9 @@ package org.limitless.fixdec4j;
 
 import org.openjdk.jmh.annotations.*;
 import org.openjdk.jmh.infra.Blackhole;
+import org.openjdk.jmh.runner.Runner;
+import org.openjdk.jmh.runner.RunnerException;
+import org.openjdk.jmh.runner.options.OptionsBuilder;
 
 import java.util.concurrent.TimeUnit;
 
@@ -83,5 +86,9 @@ public class MutableBenchmark {
     @OutputTimeUnit(TimeUnit.NANOSECONDS)
     public void mutable(MutableState state, Blackhole black) {
         black.consume(state.m.operation(6000));
+    }
+
+    public static void main(String[] args) throws RunnerException {
+        new Runner(new OptionsBuilder().include(MutableBenchmark.class.getSimpleName()).build()).run();
     }
 }

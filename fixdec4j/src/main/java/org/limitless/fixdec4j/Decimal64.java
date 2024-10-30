@@ -14,56 +14,56 @@ public final class Decimal64 implements Comparable<Decimal64> {
     public static final Decimal64 ZERO = new Decimal64(0);
     public static final Decimal64 NAN = new Decimal64(Decimal64Flyweight.NAN);
 
-    private final long m_fixedValue;
+    private final long fixedDecimal;
 
-    private Decimal64(final long inFixedValue) {
-        m_fixedValue = inFixedValue;
+    private Decimal64(final long value) {
+        fixedDecimal = value;
     }
 
     /**
      * Constructs an immutable decimal from another decimal.
-     * @param inValue decimal instance
+     * @param value decimal instance
      */
-    public Decimal64(final Decimal64 inValue) {
-        m_fixedValue = inValue.m_fixedValue;
+    public Decimal64(final Decimal64 value) {
+        fixedDecimal = value.fixedDecimal;
     }
 
     /**
      * Constructs an immutable decimal from a scaled mantissa and an exponent.
-     * @param inScaledMantissa scaled mantissa
-     * @param inExponent       exponent
+     * @param scaledMantissa scaled mantissa
+     * @param exponent       exponent
      */
-    public Decimal64(final long inScaledMantissa, final int inExponent) {
-        m_fixedValue = Decimal64Flyweight.valueOf(inScaledMantissa, inExponent);
+    public Decimal64(final long scaledMantissa, final int exponent) {
+        fixedDecimal = Decimal64Flyweight.valueOf(scaledMantissa, exponent);
     }
 
     /**
      * Constructs an immutable decimal from a scaled mantissa and an exponent.
-     * @param inScaledMantissa scaled mantissa
-     * @param inExponent       exponent
+     * @param scaledMantissa scaled mantissa
+     * @param exponent       exponent
      * @return decimal instance
      */
-    public static Decimal64 valueOf(final long inScaledMantissa, final int inExponent) {
-        return new Decimal64(inScaledMantissa, inExponent);
+    public static Decimal64 valueOf(final long scaledMantissa, final int exponent) {
+        return new Decimal64(scaledMantissa, exponent);
     }
 
     /**
      * Constructs an immutable decimal value from a string.
-     * @param inValue string
+     * @param value string
      * @return new mutable decimal instance
      */
-    public static Decimal64 valueOf(final String inValue) {
-        return new Decimal64(Decimal64Flyweight.valueOf(inValue));
+    public static Decimal64 valueOf(final String value) {
+        return new Decimal64(Decimal64Flyweight.valueOf(value));
     }
 
     /**
      * Constructs an immutable decimal value from a double.
-     * @param inValue    double
-     * @param inDecimals number of decimals
+     * @param value    double
+     * @param decimals number of decimals
      * @return new mutable decimal instance
      */
-    public static Decimal64 valueOf(final double inValue, final int inDecimals) {
-        return new Decimal64(Decimal64Flyweight.valueOf(inValue, inDecimals));
+    public static Decimal64 valueOf(final double value, final int decimals) {
+        return new Decimal64(Decimal64Flyweight.valueOf(value, decimals));
     }
 
     /**
@@ -72,23 +72,23 @@ public final class Decimal64 implements Comparable<Decimal64> {
      */
     @Override
     public String toString() {
-        return Decimal64Flyweight.toString(m_fixedValue);
+        return Decimal64Flyweight.toString(fixedDecimal);
     }
 
     /**
      * Indicates whether some other object is equal to this one.
-     * @param inObject other object
+     * @param object other object
      */
     @Override
-    public boolean equals(Object inObject) {
-        if (this == inObject) {
+    public boolean equals(Object object) {
+        if (this == object) {
             return true;
         }
-        if (inObject == null || getClass() != inObject.getClass()) {
+        if (object == null || getClass() != object.getClass()) {
             return false;
         }
 
-        return m_fixedValue == ((Decimal64) inObject).m_fixedValue;
+        return fixedDecimal == ((Decimal64) object).fixedDecimal;
     }
 
     /**
@@ -97,21 +97,21 @@ public final class Decimal64 implements Comparable<Decimal64> {
      */
     @Override
     public int hashCode() {
-        return Decimal64Flyweight.hashCode(m_fixedValue);
+        return Decimal64Flyweight.hashCode(fixedDecimal);
     }
 
     /**
      * Compares this object with the specified object for order.
-     * @param inValue other object
+     * @param value other object
      * @return less than (-1), equals (0) or greater than (1) the other object
      */
     @Override
-    public int compareTo(final Decimal64 inValue) {
-        if (inValue == null) {
+    public int compareTo(final Decimal64 value) {
+        if (value == null) {
             return 1;
         }
 
-        return Decimal64Flyweight.compareTo(m_fixedValue, inValue.m_fixedValue);
+        return Decimal64Flyweight.compareTo(fixedDecimal, value.fixedDecimal);
     }
 
     /**
@@ -119,7 +119,7 @@ public final class Decimal64 implements Comparable<Decimal64> {
      * @return unscaled mantissa
      */
     public long mantissa() {
-        return Decimal64Flyweight.mantissa(m_fixedValue);
+        return Decimal64Flyweight.mantissa(fixedDecimal);
     }
 
     /**
@@ -128,7 +128,7 @@ public final class Decimal64 implements Comparable<Decimal64> {
      * @return negative exponent or 0
      */
     public int exponent() {
-        return Decimal64Flyweight.exponent(m_fixedValue);
+        return Decimal64Flyweight.exponent(fixedDecimal);
     }
 
     /**
@@ -136,7 +136,7 @@ public final class Decimal64 implements Comparable<Decimal64> {
      * @return true when equal to NAN
      */
     public boolean isNaN() {
-        return Decimal64Flyweight.isNaN(m_fixedValue);
+        return Decimal64Flyweight.isNaN(fixedDecimal);
     }
 
     /**
@@ -144,25 +144,25 @@ public final class Decimal64 implements Comparable<Decimal64> {
      * @return true for zero values
      */
     public boolean isZero() {
-        return Decimal64Flyweight.isZero(m_fixedValue);
+        return Decimal64Flyweight.isZero(fixedDecimal);
     }
 
     /**
      * Returns the sum of this instance and its argument.
-     * @param inValue term
+     * @param value term
      * @return a new instance with the sum or NAN indicating overflow.
      */
-    public Decimal64 add(final Decimal64 inValue) {
-        return new Decimal64(Decimal64Flyweight.add(m_fixedValue, inValue.m_fixedValue));
+    public Decimal64 add(final Decimal64 value) {
+        return new Decimal64(Decimal64Flyweight.add(fixedDecimal, value.fixedDecimal));
     }
 
     /**
      * Returns the difference of this instance and its argument.
-     * @param inValue term
+     * @param value term
      * @return a new instance with the difference or NAN indicating overflow.
      */
-    public Decimal64 subtract(final Decimal64 inValue) {
-        return new Decimal64(Decimal64Flyweight.subtract(m_fixedValue, inValue.m_fixedValue));
+    public Decimal64 subtract(final Decimal64 value) {
+        return new Decimal64(Decimal64Flyweight.subtract(fixedDecimal, value.fixedDecimal));
     }
 
     /**
@@ -170,55 +170,55 @@ public final class Decimal64 implements Comparable<Decimal64> {
      * @return a negated new instance.
      */
     public Decimal64 minus() {
-        return new Decimal64(Decimal64Flyweight.minus(m_fixedValue));
+        return new Decimal64(Decimal64Flyweight.minus(fixedDecimal));
     }
 
     /**
      * Returns the product of this instance and its argument rounding away from zero.
-     * @param inValue factor
+     * @param value factor
      * @return a new instance with the product or NAN indicating overflow.
      */
-    public Decimal64 multiply(final Decimal64 inValue) {
-        return new Decimal64(Decimal64Flyweight.multiply(m_fixedValue, inValue.m_fixedValue, DecimalRounding.UP));
+    public Decimal64 multiply(final Decimal64 value) {
+        return new Decimal64(Decimal64Flyweight.multiply(fixedDecimal, value.fixedDecimal, DecimalRounding.UP));
     }
 
     /**
      * Returns the product of this instance and its argument.
-     * @param inValue factor
-     * @param inMode  decimal rounding mode
+     * @param value factor
+     * @param mode  decimal rounding mode
      * @return a new instance with the product or NAN indicating overflow.
      */
-    public Decimal64 multiply(final Decimal64 inValue, final DecimalRounding inMode) {
-        return new Decimal64(Decimal64Flyweight.multiply(m_fixedValue, inValue.m_fixedValue, inMode));
+    public Decimal64 multiply(final Decimal64 value, final DecimalRounding mode) {
+        return new Decimal64(Decimal64Flyweight.multiply(fixedDecimal, value.fixedDecimal, mode));
     }
 
     /**
      * Returns the quotient of this instance and its argument rounding away from zero.
-     * @param inValue divisor
+     * @param value divisor
      * @return a new instance with the quotient or NAN indicating overflow.
      */
-    public Decimal64 divide(final Decimal64 inValue) {
-        return new Decimal64(Decimal64Flyweight.divide(m_fixedValue, inValue.m_fixedValue, DecimalRounding.UP));
+    public Decimal64 divide(final Decimal64 value) {
+        return new Decimal64(Decimal64Flyweight.divide(fixedDecimal, value.fixedDecimal, DecimalRounding.UP));
     }
 
     /**
      * Returns the quotient of this instance.
-     * @param inValue divisor
-     * @param inMode  decimal rounding mode
+     * @param value divisor
+     * @param mode  decimal rounding mode
      * @return a new instance with the quotient or NAN indicating overflow.
      */
-    public Decimal64 divide(final Decimal64 inValue, final DecimalRounding inMode) {
-        return new Decimal64(Decimal64Flyweight.divide(m_fixedValue, inValue.m_fixedValue, inMode));
+    public Decimal64 divide(final Decimal64 value, final DecimalRounding mode) {
+        return new Decimal64(Decimal64Flyweight.divide(fixedDecimal, value.fixedDecimal, mode));
     }
 
     /**
      * Returns a decimal instance rounded according to the decimal rounding mode.
-     * @param inDecimals decimal value
-     * @param inMode     rounding mode
+     * @param decimals decimal value
+     * @param mode     rounding mode
      * @return new instance rounded according to the rounding mode or NAN indicating overflow
      */
-    public Decimal64 round(int inDecimals, DecimalRounding inMode) {
-        return new Decimal64(Decimal64Flyweight.round(m_fixedValue, inDecimals, inMode));
+    public Decimal64 round(int decimals, DecimalRounding mode) {
+        return new Decimal64(Decimal64Flyweight.round(fixedDecimal, decimals, mode));
     }
 
     /**
@@ -226,7 +226,7 @@ public final class Decimal64 implements Comparable<Decimal64> {
      * @return new absolute value instance
      */
     public Decimal64 abs() {
-        return new Decimal64(Decimal64Flyweight.abs(m_fixedValue));
+        return new Decimal64(Decimal64Flyweight.abs(fixedDecimal));
     }
 
     /**
@@ -234,7 +234,7 @@ public final class Decimal64 implements Comparable<Decimal64> {
      * @return byte value
      */
     public byte byteValue() {
-        return Decimal64Flyweight.byteValue(m_fixedValue);
+        return Decimal64Flyweight.byteValue(fixedDecimal);
     }
 
     /**
@@ -242,7 +242,7 @@ public final class Decimal64 implements Comparable<Decimal64> {
      * @return short value
      */
     public short shortValue() {
-        return Decimal64Flyweight.shortValue(m_fixedValue);
+        return Decimal64Flyweight.shortValue(fixedDecimal);
     }
 
     /**
@@ -250,7 +250,7 @@ public final class Decimal64 implements Comparable<Decimal64> {
      * @return integer value
      */
     public int intValue() {
-        return Decimal64Flyweight.intValue(m_fixedValue);
+        return Decimal64Flyweight.intValue(fixedDecimal);
     }
 
     /**
@@ -258,7 +258,7 @@ public final class Decimal64 implements Comparable<Decimal64> {
      * @return long value
      */
     public long longValue() {
-        return Decimal64Flyweight.longValue(m_fixedValue);
+        return Decimal64Flyweight.longValue(fixedDecimal);
     }
 
     /**
@@ -266,7 +266,7 @@ public final class Decimal64 implements Comparable<Decimal64> {
      * @return float value
      */
     public float floatValue() {
-        return Decimal64Flyweight.floatValue(m_fixedValue);
+        return Decimal64Flyweight.floatValue(fixedDecimal);
     }
 
     /**
@@ -274,7 +274,7 @@ public final class Decimal64 implements Comparable<Decimal64> {
      * @return double value
      */
     public double doubleValue() {
-        return Decimal64Flyweight.doubleValue(m_fixedValue);
+        return Decimal64Flyweight.doubleValue(fixedDecimal);
     }
 
     /**
@@ -282,7 +282,7 @@ public final class Decimal64 implements Comparable<Decimal64> {
      * @return decimal fly-weight value
      */
     public long toLongBits() {
-        return m_fixedValue;
+        return fixedDecimal;
     }
 
     /**

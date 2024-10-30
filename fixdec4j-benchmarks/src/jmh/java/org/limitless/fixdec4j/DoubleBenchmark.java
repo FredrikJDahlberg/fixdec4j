@@ -6,7 +6,14 @@ import org.openjdk.jmh.runner.Runner;
 import org.openjdk.jmh.runner.RunnerException;
 import org.openjdk.jmh.runner.options.OptionsBuilder;
 
+import java.util.concurrent.TimeUnit;
+
 @State(Scope.Thread)
+@Fork(jvmArgsAppend = "-server", value = 1)
+@Warmup(iterations = 2, time = 5)
+@Measurement(iterations = 2, time = 5)
+@OutputTimeUnit(TimeUnit.NANOSECONDS)
+@BenchmarkMode(Mode.AverageTime)
 public class DoubleBenchmark {
 
     @State(Scope.Benchmark)

@@ -53,12 +53,11 @@ public final class Decimal64Flyweight {
         boolean valid = valueExponent >= -DECIMALS_MAX && valueExponent <= EXPONENT_MAX;
         long mantissa = Math.abs(scaledMantissa);
         int exponent = valueExponent;
-
         if (valid) {
             if (valueExponent >= 1) {
                 final long scale = Powers10[valueExponent];
-                final int bitCount = Unsigned64Flyweight.numberOfBits(Math.abs(mantissa))
-                    + Unsigned64Flyweight.numberOfBits(scale);
+                final int bitCount = Unsigned64Flyweight.numberOfBits(Math.abs(mantissa)) +
+                    Unsigned64Flyweight.numberOfBits(scale);
                 valid = bitCount < MANTISSA_BITS;
                 mantissa *= scale;
                 exponent = 0;
@@ -70,7 +69,6 @@ public final class Decimal64Flyweight {
         if (scaledMantissa < 0) {
             mantissa = -mantissa;
         }
-
         return valid ? encode(mantissa, exponent) : NAN;
     }
 
@@ -105,7 +103,6 @@ public final class Decimal64Flyweight {
         long mantissa = -digit;
         int decimals = 0;
         int state = PARSE_STATE_MANTISSA;
-
         while (position < length) {
             digit = string.charAt(position++) - '0';
             if ((digit < 0 && digit != PARSE_POINT) || digit >= 10 || mantissa < minimum) {
@@ -144,7 +141,6 @@ public final class Decimal64Flyweight {
             return NAN;
         }
         final long mantissa = Math.round(Math.abs(value) * Powers10[decimals]);
-
         return encode(value < 0 ? -mantissa : mantissa, -decimals);
     }
 
@@ -170,7 +166,6 @@ public final class Decimal64Flyweight {
 
         long mantissa1 = mantissa(decimal1);
         long mantissa2 = mantissa(decimal2);
-
         if ((mantissa1 < 0) != (mantissa2 < 0)) {
             return mantissa1 < 0 ? -1 : 1;
         }
@@ -179,7 +174,6 @@ public final class Decimal64Flyweight {
         final int decimals2 = -exponent(decimal2);
         int mantissaBits1 = Unsigned64Flyweight.numberOfBits(Math.abs(mantissa1));
         int mantissaBits2 = Unsigned64Flyweight.numberOfBits(Math.abs(mantissa2));
-
         if (decimals1 != decimals2) {
             final long scale = Powers10[Math.abs(decimals1 - decimals2)];
             final long scaleBits = Unsigned64Flyweight.numberOfBits(scale);
@@ -248,9 +242,7 @@ public final class Decimal64Flyweight {
         if (isNaN(value) || isNaN(term)) {
             return NAN;
         }
-
-        return add(mantissa(value), -exponent(value),
-            mantissa(term), -exponent(term));
+        return add(mantissa(value), -exponent(value), mantissa(term), -exponent(term));
     }
 
     /**
@@ -270,7 +262,6 @@ public final class Decimal64Flyweight {
         int termPower = Unsigned64Flyweight.numberOfBits(Math.abs(inTermMantissa));
         int resultPower = sameSign ? Math.max(valuePower, termPower) : Math.abs(valuePower - termPower);
         long result = MANTISSA_ERROR;
-
         // The maximum value of the mantissa is equal to Long.MAX_VALUE/8 so the additions below cannot overflow,
         // MANTISSA_MAX*2 = Long.MAX_VALUE/4.
         if (resultPower > MANTISSA_BITS) {
@@ -306,8 +297,7 @@ public final class Decimal64Flyweight {
         if (isNaN(value) || isNaN(term)) {
             return NAN;
         }
-        return add(mantissa(value), -exponent(value),
-            -mantissa(term), -exponent(term));
+        return add(mantissa(value), -exponent(value), -mantissa(term), -exponent(term));
     }
 
     /**
@@ -319,9 +309,9 @@ public final class Decimal64Flyweight {
         if (isNaN(value)) {
             return NAN;
         }
+
         final long mantissa = -mantissa(value);
         final int exponent = exponent(value);
-
         return encode(mantissa, exponent);
     }
 
@@ -347,7 +337,6 @@ public final class Decimal64Flyweight {
         final int scalePower = Unsigned64Flyweight.numberOfBits(scaleDiff);
         final int decimals = Math.max(valueDecimals, factorDecimals);
         final long result;
-
         if (valuePower + factorPower + scalePower < MANTISSA_BITS) {
             result = roundedMultiply(valueMantissa, valueDecimals, factorMantissa, factorDecimals,
                 mode);

@@ -7,6 +7,8 @@ import org.openjdk.jmh.runner.RunnerException;
 import org.openjdk.jmh.runner.options.OptionsBuilder;
 
 import java.math.BigDecimal;
+import java.math.BigInteger;
+import java.math.RoundingMode;
 import java.util.concurrent.TimeUnit;
 
 @State(Scope.Thread)
@@ -17,47 +19,32 @@ import java.util.concurrent.TimeUnit;
 @BenchmarkMode(Mode.AverageTime)
 public class BigDecimalBenchmark {
 
-    @State(Scope.Benchmark)
-    public static class BigDecState {
-        BigDecimal n;
-        BigDecimal m;
-        BigDecimal t;
+    BigDecimal value = BigDecimal.valueOf(1231231231, -5);
+    BigDecimal decimal = BigDecimal.valueOf(12334, 2);
 
-        @Setup
-        public void setup() {
-            n = BigDecimal.ZERO;
-            m = BigDecimal.valueOf(100_000_000_000L);
-            t = BigDecimal.valueOf(2);
-        }
-
-
-        @TearDown
-        public void tearDown() {
-        }
+    @Benchmark
+    public BigDecimal baseline() {
+        return BigDecimal.ZERO;
     }
 
     @Benchmark
-    public void baseline() {
+    public BigDecimal add() {
+        return value.add(decimal);
     }
 
     @Benchmark
-    public void add(BigDecState state, Blackhole black) {
-        black.consume(state.n.add(state.m));
+    public BigDecimal subtract() {
+        return value.subtract(decimal);
     }
 
     @Benchmark
-    public void minus(BigDecState state, Blackhole black) {
-        black.consume(state.n.subtract(state.m));
+    public BigDecimal multiply() {
+        return value.multiply(decimal);
     }
 
     @Benchmark
-    public void multiply(BigDecState state, Blackhole black) {
-        black.consume(state.t.multiply(state.t));
-    }
-
-    @Benchmark
-    public void divide(BigDecState state, Blackhole black) {
-        black.consume(state.m.divide(state.t));
+    public BigDecimal divide() {
+        return value.divide(decimal, RoundingMode.UP);
     }
 
     public static void main(String[] args) throws RunnerException {

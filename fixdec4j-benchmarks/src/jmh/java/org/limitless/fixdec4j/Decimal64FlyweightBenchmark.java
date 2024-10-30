@@ -16,47 +16,32 @@ import java.util.concurrent.TimeUnit;
 @BenchmarkMode(Mode.AverageTime)
 public class Decimal64FlyweightBenchmark {
 
-    @State(Scope.Benchmark)
-    public static class LongState {
-        long a;
-        long b;
+    long value = Decimal64Flyweight.valueOf(2394234_000000L, -6);
+    long decimal = Decimal64Flyweight.valueOf(20_000000L, -6);
 
-        @Setup
-        public void setup() {
-            a = Decimal64Flyweight.valueOf(10_000000L, -6);
-            b = Decimal64Flyweight.valueOf(20_000000L, -6);
-        }
-
-        @TearDown
-        public void tearDown() {
-            a = 0;
-            b = 0;
-        }
+    @Benchmark
+    public long baseline() {
+        return 0;
     }
 
     @Benchmark
-    public void baseline(LongState state, Blackhole black) {
-        black.consume(++state.a);
+    public long add() {
+        return Decimal64Flyweight.add(value, decimal);
     }
 
     @Benchmark
-    public void add(LongState state, Blackhole black) {
-        black.consume(Decimal64Flyweight.add(state.a, 1));
+    public long subtract() {
+        return Decimal64Flyweight.subtract(value, decimal);
     }
 
     @Benchmark
-    public void subtract(LongState state, Blackhole black) {
-        black.consume(Decimal64Flyweight.subtract(state.a, state.b));
+    public long multiply() {
+        return Decimal64Flyweight.multiply(value, decimal, DecimalRounding.UP);
     }
 
     @Benchmark
-    public void multiply(LongState state, Blackhole black) {
-        black.consume(Decimal64Flyweight.multiply(state.a, state.b, DecimalRounding.UP));
-    }
-
-    @Benchmark
-    public void divide(LongState state, Blackhole black) {
-        black.consume(Decimal64Flyweight.divide(state.a, state.b, DecimalRounding.UP));
+    public long divide() {
+        return Decimal64Flyweight.divide(value, decimal, DecimalRounding.UP);
     }
 
     public static void main(String[] args) throws RunnerException {

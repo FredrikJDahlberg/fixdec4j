@@ -6,7 +6,6 @@ import org.openjdk.jmh.runner.Runner;
 import org.openjdk.jmh.runner.RunnerException;
 import org.openjdk.jmh.runner.options.OptionsBuilder;
 
-import java.math.BigInteger;
 import java.util.concurrent.TimeUnit;
 
 @State(Scope.Thread)
@@ -15,37 +14,37 @@ import java.util.concurrent.TimeUnit;
 @Measurement(iterations = 2, time = 10)
 @OutputTimeUnit(TimeUnit.NANOSECONDS)
 @BenchmarkMode(Mode.AverageTime)
-public class BigIntegerBenchmark {
+public class Unsigned64FlyweightBenchmark {
 
-    BigInteger value = BigInteger.valueOf(123123132);
-    BigInteger integer = BigInteger.valueOf(4711);
+    long value = 12321123132L;
+    long decimal = 5674564L;
 
     @Benchmark
-    public BigInteger baseline() {
-        return BigInteger.ONE;
+    public long baseline() {
+        return 0;
     }
 
     @Benchmark
-    public BigInteger add() {
-        return value.add(integer);
+    public long add() {
+        return Unsigned64Flyweight.add(value, decimal);
     }
 
     @Benchmark
-    public BigInteger subtract() {
-        return value.subtract(integer);
+    public long subtract() {
+        return Unsigned64Flyweight.subtract(value, decimal);
     }
 
     @Benchmark
-    public BigInteger multiply() {
-        return value.multiply(integer);
+    public long multiply() {
+        return Unsigned64Flyweight.multiply(value, decimal);
     }
 
     @Benchmark
-    public BigInteger divide() {
-        return value.divide(integer);
+    public long divide() {
+        return Unsigned64Flyweight.divide(value, decimal);
     }
 
     public static void main(String[] args) throws RunnerException {
-        new Runner(new OptionsBuilder().include(BigIntegerBenchmark.class.getSimpleName()).build()).run();
+        new Runner(new OptionsBuilder().include(Unsigned64FlyweightBenchmark.class.getSimpleName()).build()).run();
     }
 }

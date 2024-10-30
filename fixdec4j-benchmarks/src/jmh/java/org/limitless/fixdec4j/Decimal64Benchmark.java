@@ -1,6 +1,7 @@
 package org.limitless.fixdec4j;
 
 import org.openjdk.jmh.annotations.*;
+import org.openjdk.jmh.infra.Blackhole;
 import org.openjdk.jmh.runner.Runner;
 import org.openjdk.jmh.runner.RunnerException;
 import org.openjdk.jmh.runner.options.OptionsBuilder;
@@ -15,8 +16,32 @@ import java.util.concurrent.TimeUnit;
 @BenchmarkMode(Mode.AverageTime)
 public class Decimal64Benchmark {
 
+    Decimal64 value = Decimal64.valueOf(10_888_800L, -2);
+    Decimal64 decimal = Decimal64.valueOf(289, 5);
+
     @Benchmark
-    public void baseline() {
+    public Decimal64 baseline() {
+        return Decimal64.ZERO;
+    }
+
+    @Benchmark
+    public Decimal64 add() {
+        return value.add(decimal);
+    }
+
+    @Benchmark
+    public Decimal64 minus() {
+        return value.subtract(decimal);
+    }
+
+    @Benchmark
+    public Decimal64 multiply() {
+        return value.multiply(decimal);
+    }
+
+    @Benchmark
+    public Decimal64 divide() {
+        return value.divide(decimal);
     }
 
     public static void main(String[] args) throws RunnerException {

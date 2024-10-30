@@ -45,7 +45,7 @@ public final class Unsigned64Flyweight {
     }
 
     /**
-     * Returns the unigned quotient of its arguments.
+     * Returns the unsigned quotient of its arguments.
      * (The Long.divideUnsigned is too slow, beacuase it uses BigInteger)
      * @param unsignedDividend 64-bit unsigned long
      * @param unsignedDivisor  64-bit unsigned long
@@ -65,7 +65,6 @@ public final class Unsigned64Flyweight {
 
         final long quotient = ((unsignedDividend >>> 1) / unsignedDivisor) << 1;
         final long remainder = unsignedDividend - quotient * unsignedDivisor;
-
         return quotient + (compare(remainder, unsignedDivisor) >= 0 ? 1 : 0);
     }
 
@@ -90,7 +89,6 @@ public final class Unsigned64Flyweight {
 
         final long quotient = ((unsignedDividend >>> 1) / unsignedDivisor) << 1;
         final long remainder = unsignedDividend - quotient * unsignedDivisor;
-
         return remainder - (compare(remainder, unsignedDivisor) >= 0 ? unsignedDivisor : 0);
     }
 
@@ -103,7 +101,6 @@ public final class Unsigned64Flyweight {
     public static int compare(final long unsignedValue1, final long unsignedValue2) {
         final long flipped1 = unsignedValue1 ^ Long.MIN_VALUE;
         final long flipped2 = unsignedValue2 ^ Long.MIN_VALUE;
-
         return Long.compare(flipped1, flipped2);
     }
 }

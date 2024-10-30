@@ -7,7 +7,6 @@ import org.openjdk.jmh.runner.RunnerException;
 import org.openjdk.jmh.runner.options.OptionsBuilder;
 
 import java.math.BigDecimal;
-import java.math.BigInteger;
 import java.util.concurrent.TimeUnit;
 
 @State(Scope.Thread)

@@ -499,7 +499,7 @@ public final class Decimal64Flyweight {
 
         final long mantissa = mantissa(value);
         final int exponent = exponent(value);
-        return Float.valueOf(mantissa) / Powers10[-exponent];
+        return mantissa / (float) Powers10[-exponent];
     }
 
     /**
@@ -515,7 +515,7 @@ public final class Decimal64Flyweight {
 
         final long mantissa = mantissa(value);
         final int exponent = exponent(value);
-        return Double.valueOf(mantissa) / Powers10[-exponent];
+        return mantissa / (double) Powers10[-exponent];
     }
 
     /**
@@ -523,13 +523,13 @@ public final class Decimal64Flyweight {
      * @param value decimal flyweight value
      * @return string or "NAN" indicating overflow
      */
-        public static String toString(final long value) {
+    public static String toString(final long value) {
         if (isNaN(value)) {
             return "NaN";
         }
 
-        int exponent = exponent(value);
-        int decimalCount = exponent < 0 ? -exponent : 0;
+        final int exponent = exponent(value);
+        final int decimalCount = exponent < 0 ? -exponent : 0;
         long mantissa = mantissa(value);
         byte sign = 0;
         if (mantissa < 0) {
@@ -544,17 +544,21 @@ public final class Decimal64Flyweight {
             integerValue = mantissa / Powers10[decimalCount];
             long decimalValue = mantissa % Powers10[decimalCount];
             longToString(decimalValue, decimalCount + 1, string);
+            length += decimalCount + 1;
+            string[20] = '.';
         }
         longToString(integerValue, 0, string);
-        length += digitsBase10(mantissa);
-        if (exponent < 0) {
-            string[20] = '.';
+
+        int integerDigits = digitsBase10(integerValue);
+        length += integerDigits;
+
+        int offset = 20 - integerDigits;
+        if (sign != 0) {
+            --offset;
+            string[offset] = sign;
             ++length;
         }
-        if (sign != 0) {
-            string[0] = sign;
-        }
-        return new String(string, 20 - (decimalCount + 1), length);
+        return new String(string, offset, length);
     }
 
     /**
@@ -562,7 +566,6 @@ public final class Decimal64Flyweight {
      * @param value value
      * @param offset buffer start index
      * @param buffer output
-     * @return length
      */
     public static void longToString(final long value, final int offset, final byte[] buffer) {
         final long f1_10_000_000 = (1L << 60) / 1_000_000_000L;
@@ -622,7 +625,7 @@ public final class Decimal64Flyweight {
      * @param valueDecimals  unsigned decimal count of the value
      * @param factorMantissa scaled mantissa of the factor
      * @param factorDecimals unsigned decimal count of the factor
-     * @return
+     * @return product
      */
     private static long roundedMultiply128(final long valueMantissa,
                                            final int valueDecimals,
@@ -793,8 +796,8 @@ public final class Decimal64Flyweight {
         return mantissa;
     }
 
-    // limit and digit count
-    private static final long digitsBase2[] = {
+    // limit encoded digit count
+    private static final long[] digitsBase2 = {
         4294967296L,  8589934582L,  8589934582L,
         8589934582L,  12884901788L, 12884901788L,
         12884901788L, 17179868184L, 17179868184L,
@@ -846,23 +849,5 @@ public final class Decimal64Flyweight {
         100000000000000000L, // 10^17
         1000000000000000000L, // 10^18
         // 9223372036854775807L
-    };
-
-    private final static char[] DigitTens = {
-        '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '1', '1', '1', '1', '1', '1', '1',
-        '1', '1', '1', '2', '2', '2', '2', '2', '2', '2', '2', '2', '2', '3', '3', '3', '3',
-        '3', '3', '3', '3', '3', '3', '4', '4', '4', '4', '4', '4', '4', '4', '4', '4', '5',
-        '5', '5', '5', '5', '5', '5', '5', '5', '5', '6', '6', '6', '6', '6', '6', '6', '6',
-        '6', '6', '7', '7', '7', '7', '7', '7', '7', '7', '7', '7', '8', '8', '8', '8', '8',
-        '8', '8', '8', '8', '8', '9', '9', '9', '9', '9', '9', '9', '9', '9', '9',
-    };
-
-    private final static char[] DigitOnes = {
-        '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '0', '1', '2', '3', '4', '5', '6',
-        '7', '8', '9', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '0', '1', '2', '3',
-        '4', '5', '6', '7', '8', '9', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '0',
-        '1', '2', '3', '4', '5', '6', '7', '8', '9', '0', '1', '2', '3', '4', '5', '6', '7',
-        '8', '9', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '0', '1', '2', '3', '4',
-        '5', '6', '7', '8', '9', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
     };
 }

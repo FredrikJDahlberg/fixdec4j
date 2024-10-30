@@ -449,14 +449,17 @@ public class Decimal64Test {
 
 	@Test
 	public void checkToString() {
-		assertEquals("100.0001", Decimal64Flyweight.toString(Decimal64Flyweight.valueOf(100_0001, -4)));
+        assertEquals("100.0001", Decimal64Flyweight.toString(Decimal64Flyweight.valueOf(100_0001, -4)));
 		assertEquals("NaN", Decimal64Flyweight.toString(Decimal64Flyweight.NAN));
 
 		assertEquals("0.001", Decimal64Flyweight.toString(Decimal64Flyweight.valueOf(1, -3)));
 		assertEquals("1000", Decimal64Flyweight.toString(Decimal64Flyweight.valueOf(1, 3)));
 
-		assertEquals("3.14159", new MutableDecimal64(314159, -5).toString());
-		assertEquals("3.14159", new Decimal64(314159, -5).toString());
+        assertEquals("3.14159", new MutableDecimal64(314159, -5).toString());
+        assertEquals("3.14159", new Decimal64(314159, -5).toString());
+
+        assertEquals("-453.1415", new MutableDecimal64(-4531415, -4).toString());
+        assertEquals("-453.1415", new Decimal64(-4531415, -4).toString());
 	}
 
 	@Test

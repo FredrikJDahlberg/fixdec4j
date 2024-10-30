@@ -16,7 +16,7 @@ public class Unsigned64FlyweightTest {
 
         assertEquals(-2, Unsigned64Flyweight.add(MAX, MAX));
         System.out.format("%016x + %016x = %016x%n", MIN, MIN, MIN + MIN);
-        assertEquals(0, Unsigned64Flyweight.add(MIN, MIN));  // overflow: 2^64 % 2^63
+        assertEquals(0, Unsigned64Flyweight.add(MIN, MIN)); // overflow: 2^64 % 2^63
     }
 
     @Test
@@ -40,11 +40,11 @@ public class Unsigned64FlyweightTest {
         System.out.format("%016x * %016x = %016x%n", MAX, MAX, MAX * MAX);
         assertEquals(1, Unsigned64Flyweight.multiply(MAX, MAX));
         assertEquals(0, Unsigned64Flyweight.multiply(MIN, MIN));
-//		System.out.format("%016x * %016x = %016x%n",  MIN, MAX, MIN * MAX);
-//		assertEquals(1, Unsigned.multiply(MIN, MAX));
+// System.out.format("%016x * %016x = %016x%n", MIN, MAX, MIN * MAX);
+// assertEquals(1, Unsigned.multiply(MIN, MAX));
 
-//		System.out.format("%016x * %016x = %016x%n",  MAX, MIN, MAX * MIN);
-//		assertEquals(-1, Unsigned.multiply(MAX, MIN));
+// System.out.format("%016x * %016x = %016x%n", MAX, MIN, MAX * MIN);
+// assertEquals(-1, Unsigned.multiply(MAX, MIN));
     }
 
     @Test

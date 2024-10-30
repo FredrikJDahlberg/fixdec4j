@@ -2,10 +2,7 @@ package org.limitless.fixdec4j;
 
 import org.junit.jupiter.api.Test;
 
-import java.util.Arrays;
-
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class Decimal64FlyweightTest {
 

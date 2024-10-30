@@ -2,7 +2,7 @@ package org.limitless.fixdec4j;
 
 /**
  * This class provides 128-bit unsigned arithmetics with mutable semantics.
- * https://www.codeproject.com/Tips/784635/UInt-Bit-Operations
+ * <a href="https://www.codeproject.com/Tips/784635/UInt-Bit-Operations">Unsigned integer 128 bit operations</a>
  * @author Fredah
  */
 public final class MutableUnsigned128 implements Comparable<MutableUnsigned128> {
@@ -26,11 +26,11 @@ public final class MutableUnsigned128 implements Comparable<MutableUnsigned128> 
 
     /**
      * Constructs an object from a long value.
-     * @param inUnsigned 4-bit unsigned value
+     * @param value 4-bit unsigned value
      */
-    public MutableUnsigned128(final long inUnsigned) {
+    public MutableUnsigned128(final long value) {
         highBits = 0;
-        lowBits = inUnsigned;
+        lowBits = value;
     }
 
     /**
@@ -45,14 +45,12 @@ public final class MutableUnsigned128 implements Comparable<MutableUnsigned128> 
 
     /**
      * Constructs an object from another instance
-     * @param inValue 128-bit unsigned value
+     * @param value 128-bit unsigned value
      */
-    public MutableUnsigned128(final MutableUnsigned128 inValue) {
-        highBits = inValue.highBits;
-        lowBits = inValue.lowBits;
+    public MutableUnsigned128(final MutableUnsigned128 value) {
+        highBits = value.highBits;
+        lowBits = value.lowBits;
     }
-
-    // FIXME: value of
 
     /**
      * Returns a string representation of the object.
@@ -60,8 +58,8 @@ public final class MutableUnsigned128 implements Comparable<MutableUnsigned128> 
      */
     @Override
     public String toString() {
-        return String.format("{<UnsignedLong128>, 0x%016x %016x, high=%d, low=%d }", highBits,
-            lowBits, highBits, lowBits);
+        return String.format("{<UnsignedLong128>, 0x%016x %016x, high=%d, low=%d }",
+            highBits, lowBits, highBits, lowBits);
     }
 
     /**
@@ -70,43 +68,39 @@ public final class MutableUnsigned128 implements Comparable<MutableUnsigned128> 
      */
     @Override
     public int hashCode() {
-        int result = 31;
-        result += (int) (highBits ^ (highBits >>> 32));
-        result *= 31;
-        result += (int) (lowBits ^ (lowBits >>> 32));
-        return result;
+        return Long.hashCode(highBits) * 31 + Long.hashCode(lowBits);
     }
 
     /**
      * Indicates whether some other object is equal to this one.
-     * @param inObject other object
+     * @param object other object
      */
     @Override
-    public boolean equals(Object inObject) {
-        if (this == inObject) {
+    public boolean equals(Object object) {
+        if (this == object) {
             return true;
         }
-        if (inObject == null || getClass() != inObject.getClass()) {
+        if (object == null || getClass() != object.getClass()) {
             return false;
         }
 
-        final MutableUnsigned128 other = (MutableUnsigned128) inObject;
+        final MutableUnsigned128 other = (MutableUnsigned128) object;
 
         return highBits == other.highBits && lowBits == other.lowBits;
     }
 
     /**
      * Compares this object with the specified object for order.
-     * @param inValue other object
+     * @param value other object
      * @return less than (-1), equals (0) or greater than (1) the other object
      */
     @Override
-    public int compareTo(final MutableUnsigned128 inValue) {
-        final int highBits = Unsigned64Flyweight.compare(this.highBits, inValue.highBits);
+    public int compareTo(final MutableUnsigned128 value) {
+        final int highBits = Unsigned64Flyweight.compare(this.highBits, value.highBits);
         if (highBits != 0) {
             return highBits;
         } else {
-            return Unsigned64Flyweight.compare(lowBits, inValue.lowBits);
+            return Unsigned64Flyweight.compare(lowBits, value.lowBits);
         }
     }
 
@@ -192,114 +186,108 @@ public final class MutableUnsigned128 implements Comparable<MutableUnsigned128> 
 
     /**
      * Add 64-bit unsigned long to this object
-     * @param inTerm 64-bit unsigned long
+     * @param term 64-bit unsigned long
      * @return this instance with sum
      */
-    public MutableUnsigned128 add(final long inTerm) {
-        final MutableUnsigned128 sum = new MutableUnsigned128(inTerm).add(this);
+    public MutableUnsigned128 add(final long term) {
+        final MutableUnsigned128 sum = new MutableUnsigned128(term).add(this);
         highBits = sum.highBits;
         lowBits = sum.lowBits;
-
         return this;
     }
 
     /**
      * Add 128-bit unsigned value to this object
-     * @param inTerm 128-bit unsigned value
+     * @param term 128-bit unsigned value
      * @return this instance with sum
      * From <a href="https://www.codeproject.com/Tips/617214/UInt-Addition-Subtraction"
      * >www.codeproject.com</a>
      */
-    public MutableUnsigned128 add(final MutableUnsigned128 inTerm) {
-        final long carry = (((lowBits & inTerm.lowBits) & 1) + (lowBits >>> 1)
-            + (inTerm.lowBits >>> 1)) >>> 63;
-        highBits += inTerm.highBits + carry;
-        lowBits += inTerm.lowBits;
-
+    public MutableUnsigned128 add(final MutableUnsigned128 term) {
+        final long carry = (((lowBits & term.lowBits) & 1) + (lowBits >>> 1)
+            + (term.lowBits >>> 1)) >>> 63;
+        highBits += term.highBits + carry;
+        lowBits += term.lowBits;
         return this;
     }
 
     /**
      * Subtract 64-bit unsigned value from this object
-     * @param inTerm 64-bit unsigned value
+     * @param term 64-bit unsigned value
      * @return this instance with difference
      * From <a href="https://www.codeproject.com/Tips/617214/UInt-Addition-Subtraction"
      * >www.codeproject.com</a>
      */
-    public MutableUnsigned128 subtract(final long inTerm) {
-        lowBits -= inTerm;
-        final long carry = (((lowBits & inTerm) & 1) + (inTerm >>> 1) +
+    public MutableUnsigned128 subtract(final long term) {
+        lowBits -= term;
+        final long carry = (((lowBits & term) & 1) + (term >>> 1) +
             (lowBits >>> 1)) >>> 63;
         highBits -= carry;
-
         return this;
     }
 
     /**
      * Subtract 128-bit unsigned value from this object
-     * @param inTerm 128-bit unsigned object
+     * @param term 128-bit unsigned object
      * @return this instance with difference
      * From <a href="https://www.codeproject.com/Tips/617214/UInt-Addition-Subtraction"
      * >www.codeproject.com</a>
      */
-    public MutableUnsigned128 subtract(final MutableUnsigned128 inTerm) {
+    public MutableUnsigned128 subtract(final MutableUnsigned128 term) {
         final long low = lowBits;
         final long high = highBits;
-        lowBits = low - inTerm.lowBits;
-        final long carry = (((lowBits & inTerm.lowBits) & 1) + (inTerm.lowBits >>> 1)
+        lowBits = low - term.lowBits;
+        final long carry = (((lowBits & term.lowBits) & 1) + (term.lowBits >>> 1)
             + (lowBits >>> 1)) >>> 63;
-        highBits = high - (inTerm.highBits + carry);
-
+        highBits = high - (term.highBits + carry);
         return this;
     }
 
     /**
      * Multiply this object with 64-bit unsigned value
-     * @param inFactor 64-bit unsigned value
+     * @param factor 64-bit unsigned value
      * @return this instance with product
      */
-    public MutableUnsigned128 multiply(final long inFactor) {
-        final MutableUnsigned128 product = new MutableUnsigned128(inFactor);
+    public MutableUnsigned128 multiply(final long factor) {
+        final MutableUnsigned128 product = new MutableUnsigned128(factor);
         product.multiply(this);
         highBits = product.highBits;
         lowBits = product.lowBits;
-
         return this;
     }
 
     /**
      * Multiply this object with 128-bit unsigned factor
-     * @param inFactor 128-bit unsigned value
+     * @param factor 128-bit unsigned value
      * @return this instance with product
      * From <a href="https://www.codeproject.com/Tips/618570/UInt-Multiplication-Squaring"
      * >www.codeproject.com</a>
      */
-    public MutableUnsigned128 multiply(MutableUnsigned128 inFactor) {
+    public MutableUnsigned128 multiply(MutableUnsigned128 factor) {
         final long highBits = this.highBits;
         final long lowBits = this.lowBits;
-        multiply(this.lowBits, inFactor.lowBits, this);
-        this.highBits += highBits * inFactor.lowBits;
-        this.highBits += lowBits * inFactor.highBits;
-
+        multiply(this.lowBits, factor.lowBits, this);
+        this.highBits += highBits * factor.lowBits;
+        this.highBits += lowBits * factor.highBits;
         return this;
     }
 
     /**
      * Divide this object with 64-bit unsigned divisor
-     * @param inDivisor 64-bit unsigned divisor
+     * @param divisor 64-bit unsigned divisor
      * @return this instance with quotient
      */
-    public MutableUnsigned128 divide(final long inDivisor) {
-        return divide(new MutableUnsigned128(inDivisor));
+    public MutableUnsigned128 divide(final long divisor) {
+        return divide(new MutableUnsigned128(divisor));
     }
 
     /**
      * Divide this object with 128-bit unsigned divisor
-     * @param inDivisor 128-bit unsinged divisor
+     * @param divisor 128-bit unsinged divisor
      * @return this instance with quotient
      */
-    public MutableUnsigned128 divide(final MutableUnsigned128 inDivisor) {
-        return divide(inDivisor, new MutableUnsigned128());
+    public MutableUnsigned128 divide(final MutableUnsigned128 divisor) {
+        return divide(divisor, new MutableUnsigned128());
     }
 
     /**
@@ -312,7 +300,6 @@ public final class MutableUnsigned128 implements Comparable<MutableUnsigned128> 
         final long value = lowBits + 1;
         highBits += ((lowBits ^ value) & lowBits) >>> 63;
         lowBits = value;
-
         return this;
     }
 
@@ -326,7 +313,6 @@ public final class MutableUnsigned128 implements Comparable<MutableUnsigned128> 
         final long value = lowBits - 1;
         highBits -= ((value ^ lowBits) & value) >>> 63;
         lowBits = value;
-
         return this;
     }
 
@@ -339,35 +325,32 @@ public final class MutableUnsigned128 implements Comparable<MutableUnsigned128> 
     public MutableUnsigned128 not() {
         highBits = ~highBits;
         lowBits = ~lowBits;
-
         return this;
     }
 
     /**
      * This instance bit-wise or with value
-     * @param inValue 128-bit unsigned integer
+     * @param value 128-bit unsigned integer
      * @return this instance with result
      * From <a href="https://www.codeproject.com/Tips/784635/UInt-Bit-Operations"
      * >www.codeproject.com</a>
      */
-    public MutableUnsigned128 or(final MutableUnsigned128 inValue) {
-        highBits |= inValue.highBits;
-        lowBits |= inValue.lowBits;
-
+    public MutableUnsigned128 or(final MutableUnsigned128 value) {
+        highBits |= value.highBits;
+        lowBits |= value.lowBits;
         return this;
     }
 
     /**
      * This instance bit-wise and with value
-     * @param inValue unsigned 128-bit integer
+     * @param value unsigned 128-bit integer
      * @return this instance with result
      * From <a href="https://www.codeproject.com/Tips/784635/UInt-Bit-Operations"
      * >www.codeproject.com</a>
      */
-    public MutableUnsigned128 and(final MutableUnsigned128 inValue) {
-        highBits &= inValue.highBits;
-        lowBits &= inValue.lowBits;
-
+    public MutableUnsigned128 and(final MutableUnsigned128 value) {
+        highBits &= value.highBits;
+        lowBits &= value.lowBits;
         return this;
     }
 
@@ -382,67 +365,64 @@ public final class MutableUnsigned128 implements Comparable<MutableUnsigned128> 
 
     /**
      * Shift value left
-     * @param inCount number of steps
+     * @param count number of steps
      * @return this instance with result
      * From <a href="https://www.codeproject.com/Tips/784635/UInt-Bit-Operations"
      * >www.codeproject.com</a>
      */
-    public MutableUnsigned128 shiftLeft(final int inCount) {
-        long count = inCount & 127;
-        final long M1 = ((((count + 127) | count) & 64) >>> 6) - 1L;
-        final long M2 = (count >>> 6) - 1L;
+    public MutableUnsigned128 shiftLeft(final int count) {
+        long bits = count & 127;
+        final long M1 = ((((bits + 127) | bits) & 64) >>> 6) - 1L;
+        final long M2 = (bits >>> 6) - 1L;
         final long high = highBits;
         final long low = lowBits;
 
-        count &= 63;
-        highBits = (low << count) & (~M2);
-        lowBits = (low << count) & M2;
-        highBits |= ((high << count) | ((low >>> (64 - count)) & M1)) & M2;
-
+        bits &= 63;
+        highBits = (low << bits) & (~M2);
+        lowBits = (low << bits) & M2;
+        highBits |= ((high << bits) | ((low >>> (64 - bits)) & M1)) & M2;
         return this;
     }
 
     /**
      * Shift value right
-     * @param inCount number of steps
+     * @param count number of steps
      * @return this instance with result
      * From <a href="https://www.codeproject.com/Tips/784635/UInt-Bit-Operations"
      * >www.codeproject.com</a>
      */
-    public MutableUnsigned128 shiftRight(final int inCount) {
-        long count = inCount & 127;
-        final long M1 = ((((count + 127) | count) & 64) >>> 6) - 1L;
-        final long M2 = (count >>> 6) - 1L;
+    public MutableUnsigned128 shiftRight(final int count) {
+        long bits = count & 127;
+        final long M1 = ((((bits + 127) | bits) & 64) >>> 6) - 1L;
+        final long M2 = (bits >>> 6) - 1L;
         final long high = highBits;
         final long low = lowBits;
-
-        count &= 63;
-        lowBits = (high >>> count) & (~M2);
-        highBits = (high >>> count) & M2;
-        lowBits |= ((low >>> count) | ((high << (64 - count)) & M1)) & M2;
-
+        bits &= 63;
+        lowBits = (high >>> bits) & (~M2);
+        highBits = (high >>> bits) & M2;
+        lowBits |= ((low >>> bits) | ((high << (64 - bits)) & M1)) & M2;
         return this;
     }
 
     /**
      * Multiplies two 64-bit factors and produces a 128-bit product
-     * @param inValue1 64-bit unsigned factor
-     * @param inValue2 64-bit unsigned factor
-     * @param inResult 128-bit unsigned product
+     * @param value1 64-bit unsigned factor
+     * @param value2 64-bit unsigned factor
+     * @param result 128-bit unsigned product
      *                 From <a href="https://www.codeproject.com/Tips/618570/UInt-Multiplication-Squaring"
      *                 >www.codeproject.com</a>
      */
-    private static void multiply(final long inValue1, final long inValue2,
-                                 final MutableUnsigned128 inResult) {
-        int powerFactor1 = Long.SIZE - Long.numberOfLeadingZeros(inValue1);
-        int powerFactor2 = Long.SIZE - Long.numberOfLeadingZeros(inValue2);
-
+    private static void multiply(final long value1,
+                                 final long value2,
+                                 final MutableUnsigned128 result) {
+        int powerFactor1 = Long.SIZE - Long.numberOfLeadingZeros(value1);
+        int powerFactor2 = Long.SIZE - Long.numberOfLeadingZeros(value2);
         if (powerFactor1 + powerFactor2 < Long.SIZE) {
-            inResult.highBits = 0;
-            inResult.lowBits = inValue1 * inValue2;
+            result.highBits = 0;
+            result.lowBits = value1 * value2;
         } else {
-            long factor1 = inValue1;
-            long factor2 = inValue2;
+            long factor1 = value1;
+            long factor2 = value2;
             final long u1 = factor1 & INT_BITS;
             final long v1 = factor2 & INT_BITS;
             long t = u1 * v1;
@@ -456,47 +436,45 @@ public final class MutableUnsigned128 implements Comparable<MutableUnsigned128> 
             factor2 >>>= Integer.SIZE;
             t = (u1 * factor2) + k;
             k = t >>> Integer.SIZE;
-
-            inResult.highBits = (factor1 * factor2) + w1 + k;
-            inResult.lowBits = (t << Integer.SIZE) + w3;
+            result.highBits = (factor1 * factor2) + w1 + k;
+            result.lowBits = (t << Integer.SIZE) + w3;
         }
     }
 
     /**
      * Divides this 128-bit unsigned value with divisor
-     * @param inDivisor   divisor 128-bit unsigned
+     * @param divisor   divisor 128-bit unsigned
      * @param inRemainder remainder of the division 128-bit unsigned
      * @return this instance updated with the 128-bit quotient
      * From <a href="http://www.codeproject.com/Tips/785014/UInt-Division-Modulus"
      * >www.codeproject.com</a>
      */
-    public MutableUnsigned128 divide(final MutableUnsigned128 inDivisor, final MutableUnsigned128 inRemainder) {
-        if ((highBits | inDivisor.highBits) == 0) {
+    public MutableUnsigned128 divide(final MutableUnsigned128 divisor, final MutableUnsigned128 inRemainder) {
+        if ((highBits | divisor.highBits) == 0) {
             final long lowBits = this.lowBits;
             highBits = 0;
-            this.lowBits = Unsigned64Flyweight.divide(lowBits, inDivisor.lowBits);
+            this.lowBits = Unsigned64Flyweight.divide(lowBits, divisor.lowBits);
             inRemainder.highBits = 0;
-            inRemainder.lowBits = Unsigned64Flyweight.remainder(lowBits, inDivisor.lowBits);
-        } else if (inDivisor.highBits == 0) {
+            inRemainder.lowBits = Unsigned64Flyweight.remainder(lowBits, divisor.lowBits);
+        } else if (divisor.highBits == 0) {
             final MutableUnsigned128 remainder = new MutableUnsigned128();
-            long quotientLow = 0;
+            final long quotientLow;
             long quotientHigh = 0;
-            if (Unsigned64Flyweight.compare(highBits, inDivisor.lowBits) <= -1) {
+            if (Unsigned64Flyweight.compare(highBits, divisor.lowBits) <= -1) {
                 // remainder contains quotient and reminder
-                quotientLow = divide(highBits, lowBits, inDivisor.lowBits, remainder);
-                quotientHigh = 0;
+                quotientLow = divide(highBits, lowBits, divisor.lowBits, remainder);
             } else {
-                quotientHigh = Unsigned64Flyweight.divide(highBits, inDivisor.lowBits);
-                final long remainderHigh = Unsigned64Flyweight.remainder(highBits, inDivisor.lowBits);
-                quotientLow = divide(remainderHigh, lowBits, inDivisor.lowBits, remainder);
+                quotientHigh = Unsigned64Flyweight.divide(highBits, divisor.lowBits);
+                final long remainderHigh = Unsigned64Flyweight.remainder(highBits, divisor.lowBits);
+                quotientLow = divide(remainderHigh, lowBits, divisor.lowBits, remainder);
             }
             highBits = quotientHigh;
             lowBits = quotientLow;
             inRemainder.highBits = 0;
             inRemainder.lowBits = remainder.lowBits;
         } else {
-            final int zeros = Long.numberOfLeadingZeros(inDivisor.highBits);
-            final MutableUnsigned128 v1 = new MutableUnsigned128(inDivisor).shiftLeft(zeros);
+            final int zeros = Long.numberOfLeadingZeros(divisor.highBits);
+            final MutableUnsigned128 v1 = new MutableUnsigned128(divisor).shiftLeft(zeros);
             final MutableUnsigned128 u1 = new MutableUnsigned128(this).shiftRight(1);
             final MutableUnsigned128 q1 = new MutableUnsigned128();
 
@@ -509,13 +487,13 @@ public final class MutableUnsigned128 implements Comparable<MutableUnsigned128> 
             }
 
             final MutableUnsigned128 quotient = new MutableUnsigned128(q1);
-            q1.multiply(inDivisor);
+            q1.multiply(divisor);
             inRemainder.highBits = highBits;
             inRemainder.lowBits = lowBits;
             inRemainder.subtract(q1);
-            if (inRemainder.compareTo(inDivisor) >= 0) {
+            if (inRemainder.compareTo(divisor) >= 0) {
                 quotient.increment();
-                inRemainder.subtract(inDivisor);
+                inRemainder.subtract(divisor);
             }
             highBits = quotient.highBits;
             lowBits = quotient.lowBits;
@@ -525,29 +503,30 @@ public final class MutableUnsigned128 implements Comparable<MutableUnsigned128> 
 
     /**
      * Iterative division of 128-bit dividend by 64-bit divisor.
-     * @param inDividendHigh 64 higher bits
-     * @param inDividendLow  64 lower bits
-     * @param inDivisor      64-bit
-     * @param inResult       returns the quotient and remainder as high bits and low bits respectively
+     * @param dividendHigh 64 higher bits
+     * @param dividendLow  64 lower bits
+     * @param divisor      64-bit
+     * @param result       returns the quotient and remainder as high bits and low bits respectively
      * @return 64-bit quotient
      * From <a href="http://www.codeproject.com/Tips/785014/UInt-Division-Modulus"
      * >www.codeproject.com</a>
      */
-    private static long divide(final long inDividendHigh, final long inDividendLow,
-                               final long inDivisor, final MutableUnsigned128 inResult) {
-        final int zeros = Long.numberOfLeadingZeros(inDivisor);
-        long v = inDivisor << zeros;
+    private static long divide(final long dividendHigh,
+                               final long dividendLow,
+                               final long divisor,
+                               final MutableUnsigned128 result) {
+        final int zeros = Long.numberOfLeadingZeros(divisor);
+        long v = divisor << zeros;
         final long vn1 = v >>> Integer.SIZE;
         final long vn0 = v & INT_BITS;
         final long un32;
         final long un10;
-
         if (zeros > 0) {
-            un32 = (inDividendHigh << zeros) | (inDividendLow >>> (Long.SIZE - zeros));
-            un10 = inDividendLow << zeros;
+            un32 = (dividendHigh << zeros) | (dividendLow >>> (Long.SIZE - zeros));
+            un10 = dividendLow << zeros;
         } else {
-            un32 = inDividendHigh;
-            un10 = inDividendLow;
+            un32 = dividendHigh;
+            un10 = dividendLow;
         }
 
         final long un1 = un10 >>> Integer.SIZE;
@@ -556,7 +535,6 @@ public final class MutableUnsigned128 implements Comparable<MutableUnsigned128> 
         long rhat = Unsigned64Flyweight.remainder(un32, vn1);
         long left = q1 * vn0;
         long right = (rhat << Integer.SIZE) + un1;
-
         while (Unsigned64Flyweight.compare(q1, LIMIT) >= 0 || Unsigned64Flyweight.compare(left, right) >= 1) {
             --q1;
             rhat += vn1;
@@ -573,7 +551,6 @@ public final class MutableUnsigned128 implements Comparable<MutableUnsigned128> 
         rhat = Unsigned64Flyweight.remainder(un21, vn1);
         left = q0 * vn0;
         right = (rhat << Integer.SIZE) | un0;
-
         while (Unsigned64Flyweight.compare(q0, LIMIT) >= 0 || Unsigned64Flyweight.compare(left, right) >= 1) {
             --q0;
             rhat += vn1;
@@ -587,9 +564,8 @@ public final class MutableUnsigned128 implements Comparable<MutableUnsigned128> 
 
         final long quotient = (q1 << Integer.SIZE) | q0;
         final long remainder = ((un21 << Integer.SIZE) + (un0 - (q0 * v))) >>> zeros;
-        inResult.highBits = quotient;
-        inResult.lowBits = remainder;
-
+        result.highBits = quotient;
+        result.lowBits = remainder;
         return quotient;
     }
 }

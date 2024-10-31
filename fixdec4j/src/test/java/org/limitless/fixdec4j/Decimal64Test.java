@@ -661,7 +661,6 @@ public class Decimal64Test {
 		assertEquals(10, Decimal64Flyweight.byteValue(Decimal64Flyweight.valueOf(10, 0), IMMUTABLE));
 		assertEquals(10, Decimal64Flyweight.shortValue(Decimal64Flyweight.valueOf(10, 0), IMMUTABLE));
 		assertEquals(10, Decimal64Flyweight.intValue(Decimal64Flyweight.valueOf(10, 0), IMMUTABLE));
-		// there is not good way to represent errors for byte, short and integer
 		assertEquals(8, Decimal64Flyweight.byteValue(Decimal64Flyweight.NAN, IMMUTABLE));
 		assertEquals(8, Decimal64Flyweight.shortValue(Decimal64Flyweight.NAN, IMMUTABLE));
         assertEquals(8, Decimal64Flyweight.intValue(Decimal64Flyweight.NAN, IMMUTABLE));

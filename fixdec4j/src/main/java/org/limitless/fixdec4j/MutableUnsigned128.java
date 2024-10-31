@@ -433,6 +433,7 @@ public final class MutableUnsigned128 implements Comparable<MutableUnsigned128> 
     public MutableUnsigned128 divide(final MutableUnsigned128 divisor,
                                      final MutableUnsigned128 inRemainder,
                                      final MutableUnsigned128.Context context) {
+        final MutableUnsigned128 remainder = context.remainder2; //new MutableUnsigned128();
         if ((highBits | divisor.highBits) == 0) {
             final long lowBits = this.lowBits;
             highBits = 0;
@@ -440,7 +441,6 @@ public final class MutableUnsigned128 implements Comparable<MutableUnsigned128> 
             inRemainder.highBits = 0;
             inRemainder.lowBits = Unsigned64Flyweight.remainder(lowBits, divisor.lowBits);
         } else if (divisor.highBits == 0) {
-            final MutableUnsigned128 remainder = new MutableUnsigned128();
             final long quotientLow;
             long quotientHigh = 0;
             if (Unsigned64Flyweight.compare(highBits, divisor.lowBits) <= -1) {
@@ -459,11 +459,10 @@ public final class MutableUnsigned128 implements Comparable<MutableUnsigned128> 
             final MutableUnsigned128 v1 = context.v1;
             final MutableUnsigned128 u1 = context.u1;
             final MutableUnsigned128 q1 = context.q1;
-            final MutableUnsigned128 remainder2 = context.remainder2;
             final int zeros = Long.numberOfLeadingZeros(divisor.highBits);
             v1.set(divisor).shiftLeft(zeros);
             u1.set(this).shiftRight(1);
-            q1.lowBits = divide(u1.highBits, u1.lowBits, v1.highBits, remainder2);
+            q1.lowBits = divide(u1.highBits, u1.lowBits, v1.highBits, remainder);
             q1.highBits = 0;
             q1.shiftRight(63 - zeros);
             if ((q1.highBits | q1.lowBits) != 0) {

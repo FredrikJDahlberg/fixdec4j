@@ -174,7 +174,7 @@ public final class Decimal64 implements Comparable<Decimal64> {
     /**
      * Returns the product of this instance and its argument rounding away from zero.
      * @param value factor
-     * @param context helper
+     * @param context rounding mode
      * @return a new instance with the product or NAN indicating overflow.
      */
     public Decimal64 multiply(final Decimal64 value, final Decimal64.Context context) {
@@ -184,13 +184,19 @@ public final class Decimal64 implements Comparable<Decimal64> {
     /**
      * Returns the quotient of this instance.
      * @param value divisor
-     * @param context helper
+     * @param context rounding mode
      * @return a new instance with the quotient or NAN indicating overflow.
      */
     public Decimal64 divide(final Decimal64 value, final Decimal64.Context context) {
         return new Decimal64(Decimal64Flyweight.divide(fixedDecimal, value.fixedDecimal, context));
     }
 
+    /**
+     * Round the value to the specified number of decimals according to the rounding mode.
+     * @param decimals number of decimals
+     * @param context rounding mode
+     * @return rounded value
+     */
     public Decimal64 round(int decimals, Decimal64.Context context) {
         return new Decimal64(Decimal64Flyweight.round(fixedDecimal, decimals, context));
     }
@@ -205,7 +211,7 @@ public final class Decimal64 implements Comparable<Decimal64> {
 
     /**
      * Returns the value of the specified number as a byte, which may involve rounding or truncation.
-     * @param context helper
+     * @param context rounding mode
      * @return byte value
      */
     public byte byteValue(final Decimal64.Context context) {
@@ -214,7 +220,7 @@ public final class Decimal64 implements Comparable<Decimal64> {
 
     /**
      * Returns the value of the specified number as a short, which may involve rounding or truncation.
-     * @param context helper
+     * @param context rounding mode
      * @return short value
      */
     public short shortValue(Decimal64.Context context) {
@@ -223,7 +229,7 @@ public final class Decimal64 implements Comparable<Decimal64> {
 
     /**
      * Returns the value of the specified number as an integer, which may involve rounding or truncation.
-     * @param context helper
+     * @param context rounding mode
      * @return integer value
      */
     public int intValue(Decimal64.Context context) {

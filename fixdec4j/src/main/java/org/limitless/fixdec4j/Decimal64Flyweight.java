@@ -10,7 +10,7 @@ package org.limitless.fixdec4j;
  * <p>
  * The multiplication and division methods will round the result properly to the
  * largest precision of its operands. Note that only the number of decimals is
- * stored, e.g 100e0 and 1e2 are normalized to 100e0.
+ * stored, e.g. 100e0 and 1e2 are normalized to 100e0.
  * <p>
  * The supported decimal rounding modes are Up and Down, see RoundingMode.
  * <p>
@@ -338,7 +338,7 @@ public final class Decimal64Flyweight {
         final int factorBits = Unsigned64Flyweight.numberOfBits(Math.abs(factorMantissa));
         final long result;
         if (valueBits + factorBits + scaleBits < MANTISSA_BITS) {
-            result = roundedMultiply(valueMantissa, valueDecimals, factorMantissa, factorDecimals, context);
+            result = roundedMultiply(valueMantissa, valueDecimals, factorMantissa, factorDecimals, context.mode);
         } else {
             result = roundedMultiply128(valueMantissa, valueDecimals, factorMantissa, factorDecimals, context);
         }
@@ -575,7 +575,7 @@ public final class Decimal64Flyweight {
                                         final int valueDecimals,
                                         final long factorMantissa,
                                         final int factorDecimals,
-                                        final Decimal64.Context context) {
+                                        final DecimalRounding mode) {
         final int decimals = Math.max(valueDecimals, factorDecimals);
         long product = Math.abs(valueMantissa * factorMantissa);
         if (valueDecimals != factorDecimals) {
@@ -583,7 +583,7 @@ public final class Decimal64Flyweight {
         }
 
         final long scale = Powers10[decimals];
-        if (context.mode == DecimalRounding.UP) {
+        if (mode == DecimalRounding.UP) {
             product += (scale >>> 1);
         }
         product /= scale;
@@ -600,6 +600,7 @@ public final class Decimal64Flyweight {
      * @param valueDecimals  unsigned decimal count of the value
      * @param factorMantissa scaled mantissa of the factor
      * @param factorDecimals unsigned decimal count of the factor
+     * @param context rounding mode
      * @return product
      */
     private static long roundedMultiply128(final long valueMantissa,
@@ -608,14 +609,12 @@ public final class Decimal64Flyweight {
                                            final int factorDecimals,
                                            final Decimal64.Context context) {
         final MutableUnsigned128 product = context.product.set(Math.abs(valueMantissa));
-        //final long scaleDiff = Powers10[Math.abs(valueDecimals - factorDecimals)];
         if (valueDecimals != factorDecimals) {
             final long scale = Powers10[Math.abs(valueDecimals - factorDecimals)];
             product.multiply(context.scale.set(scale));
         }
 
         final MutableUnsigned128 factor = context.factor.set(Math.abs(factorMantissa));
-        //product.multiply(Math.abs(factorMantissa), context);
         product.multiply(factor);
 
         final long scale = Powers10[Math.max(valueDecimals, factorDecimals)];
@@ -623,9 +622,8 @@ public final class Decimal64Flyweight {
             product.divide(scale, context);
         } else {
             final MutableUnsigned128 rounding = context.rounding.set(scale).shiftRight(1);
-            final MutableUnsigned128 q1 = context.q1.set(product);
-            final MutableUnsigned128 remainder = context.remainder2;
-            q1.divide(rounding, remainder, context);
+            final MutableUnsigned128 remainder = context.remainder1;
+            context.q1.set(product).divide(rounding, remainder, context);
             if (remainder.isZero()) {
                 product.divide(context.scale.set(scale), remainder, context);
                 if (remainder.compareTo(rounding) == 0 && context.mode == DecimalRounding.UP) {
@@ -722,9 +720,7 @@ public final class Decimal64Flyweight {
         if (rounding.isZero()) {
             quotient.divide(divisor, context);
         } else {
-            //final MutableUnsigned128 remainder = new MutableUnsigned128();
-            //new MutableUnsigned128(quotient).divide(rounding, remainder); // FIXME
-            context.q1.set(quotient).divide(rounding, context.remainder2, context); // FIXME
+            context.q1.set(quotient).divide(rounding, context.remainder2, context);
             if (context.remainder2.isZero()) {
                 quotient.divide(divisor, context.remainder2, context);
                 if (context.remainder2.compareTo(rounding) == 0 && context.mode == DecimalRounding.UP) {

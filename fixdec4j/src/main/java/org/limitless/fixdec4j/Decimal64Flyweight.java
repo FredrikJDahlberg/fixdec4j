@@ -17,6 +17,7 @@ package org.limitless.fixdec4j;
  * The arithmetic operations will not overflow unless the result cannot be
  * represented within the limits above (intermediate values use 128-bit
  * arithmetic when necessary).
+ * @author fredrikdahlberg
  */
 public final class Decimal64Flyweight {
     private static final long DECIMAL_BITS = 3;
@@ -58,14 +59,12 @@ public final class Decimal64Flyweight {
                 final long scale = Powers10[valueExponent];
                 final int bitCount = Unsigned64Flyweight.numberOfBits(Math.abs(mantissa)) +
                     Unsigned64Flyweight.numberOfBits(scale);
-                valid = bitCount < MANTISSA_BITS;
+                valid = bitCount <= MANTISSA_BITS;
                 mantissa *= scale;
                 exponent = 0;
             }
         }
-        if (valid) {
-            valid = mantissa <= MANTISSA_MAX;
-        }
+        valid &= mantissa <= MANTISSA_MAX;
         if (scaledMantissa < 0) {
             mantissa = -mantissa;
         }

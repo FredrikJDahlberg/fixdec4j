@@ -2,7 +2,7 @@ package org.limitless.fixdec4j;
 
 /**
  * Rounding modes for Decimal, MutableDecimal and MutableUnsigned128
- * @author Fredah
+ * @author fredrikdahlberg
  */
 public enum DecimalRounding {
     UP,   // Rounding mode to round away from zero, e.g. 5.5 = 6, -5.5 = -6

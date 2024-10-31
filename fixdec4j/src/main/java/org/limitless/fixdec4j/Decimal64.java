@@ -2,7 +2,7 @@ package org.limitless.fixdec4j;
 
 /**
  * This class implements an immutable fixed decimal number, see the DecimalFlyweight for details.
- * @author Fredah
+ * @author fredrikdahlberg
  */
 public final class Decimal64 implements Comparable<Decimal64> {
     public static final long MANTISSA_MAX = Decimal64Flyweight.MANTISSA_MAX;

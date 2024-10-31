@@ -2,7 +2,7 @@ package org.limitless.fixdec4j;
 
 /**
  * This class implements unsigned 64-bit arithmetic.
- * @author Fredah
+ * @author fredrikdahlberg
  */
 public final class Unsigned64Flyweight {
     /**

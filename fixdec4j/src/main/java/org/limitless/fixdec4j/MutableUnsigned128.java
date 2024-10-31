@@ -3,7 +3,7 @@ package org.limitless.fixdec4j;
 /**
  * This class provides 128-bit unsigned arithmetics with mutable semantics.
  * <a href="https://www.codeproject.com/Tips/784635/UInt-Bit-Operations">Unsigned integer 128 bit operations</a>
- * @author Fredah
+ * @author fredrikdahlberg
  */
 public final class MutableUnsigned128 implements Comparable<MutableUnsigned128> {
     private static final long INT_BITS = 0xffffffffL;

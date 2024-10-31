@@ -1,9 +1,8 @@
 package org.limitless.fixdec4j;
 
 /**
- * This class implements a mutable fixed decimal number, see the DecimalFlyweight class
- * for details.
- * @author Fredah
+ * This class implements a mutable fixed decimal number, see the DecimalFlyweight class for details.
+ * @author fredrikdahlberg
  */
 public final class MutableDecimal64 implements Comparable<MutableDecimal64> {
     // mantissa limits

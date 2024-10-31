@@ -200,7 +200,7 @@ public final class Decimal64Flyweight {
      * @return unscaled mantissa
      */
     public static long mantissa(final long decimal) {
-        return decimal == NAN ? MANTISSA_ERROR : decimal >> DECIMAL_BITS;
+        return decimal == NAN ? MANTISSA_ERROR : (decimal >> DECIMAL_BITS);
     }
 
     /**
@@ -322,27 +322,25 @@ public final class Decimal64Flyweight {
      * @param factor      decimal flyweight value
      * @return product of the values or NAN indicating overflow
      */
-    public static long multiply(final long value, final long factor, DecimalRounding mode) {
+    public static long multiply(final long value, final long factor, Decimal64.Context context) {
         if (isNaN(value) || isNaN(factor)) {
             return NAN;
         }
 
-        final int valueDecimals = -exponent(value);
-        final int factorDecimals = -exponent(factor);
-        final long scaleDiff = Powers10[Math.abs(valueDecimals - factorDecimals)];
         final long valueMantissa = mantissa(value);
         final long factorMantissa = mantissa(factor);
-        final int valuePower = Unsigned64Flyweight.numberOfBits(Math.abs(valueMantissa));
-        final int factorPower = Unsigned64Flyweight.numberOfBits(Math.abs(factorMantissa));
-        final int scalePower = Unsigned64Flyweight.numberOfBits(scaleDiff);
+        final int valueDecimals = -exponent(value);
+        final int factorDecimals = -exponent(factor);
         final int decimals = Math.max(valueDecimals, factorDecimals);
+        final long scaleDiff = Powers10[Math.abs(valueDecimals - factorDecimals)];
+        final int scaleBits = Unsigned64Flyweight.numberOfBits(scaleDiff);
+        final int valueBits = Unsigned64Flyweight.numberOfBits(Math.abs(valueMantissa));
+        final int factorBits = Unsigned64Flyweight.numberOfBits(Math.abs(factorMantissa));
         final long result;
-        if (valuePower + factorPower + scalePower < MANTISSA_BITS) {
-            result = roundedMultiply(valueMantissa, valueDecimals, factorMantissa, factorDecimals,
-                mode);
+        if (valueBits + factorBits + scaleBits < MANTISSA_BITS) {
+            result = roundedMultiply(valueMantissa, valueDecimals, factorMantissa, factorDecimals, context);
         } else {
-            result = roundedMultiply128(valueMantissa, valueDecimals, factorMantissa,
-                factorDecimals, mode);
+            result = roundedMultiply128(valueMantissa, valueDecimals, factorMantissa, factorDecimals, context);
         }
         return encode(result, -decimals);
     }
@@ -353,9 +351,7 @@ public final class Decimal64Flyweight {
      * @param divisor  64-bit fixed decimal flyweight
      * @return rounded quotient 64-bit fixed decimal flyweight
      */
-    public static long divide(final long dividend,
-                              final long divisor,
-                              final DecimalRounding mode) {
+    public static long divide(final long dividend, final long divisor, final Decimal64.Context context) {
         if (isNaN(dividend) || isNaN(divisor) || divisor == 0) {
             return NAN;
         }
@@ -376,14 +372,11 @@ public final class Decimal64Flyweight {
         final int decimals = Math.max(dividendDecimals, divisorDecimals);
         final long scaling = Powers10[decimals + Math.abs(dividendDecimals - divisorDecimals)];
         quotientPower2 += Unsigned64Flyweight.numberOfBits(scaling);
-
         final long quotient;
         if (quotientPower2 < Long.SIZE) {
-            quotient = roundedDivide(dividendMantissa, dividendDecimals, divisorMantissa,
-                divisorDecimals, mode);
+            quotient = roundedDivide(dividendMantissa, dividendDecimals, divisorMantissa, divisorDecimals, context);
         } else {
-            quotient = roundedDivide128(dividendMantissa, dividendDecimals, divisorMantissa,
-                divisorDecimals, mode);
+            quotient = roundedDivide128(dividendMantissa, dividendDecimals, divisorMantissa, divisorDecimals, context);
         }
         return encode(quotient, -decimals);
     }
@@ -391,32 +384,29 @@ public final class Decimal64Flyweight {
     /**
      * Returns a decimal flyweight rounded according to the decimal rounding
      * mode.
-     * @param inDecimalFlyweight decimal flyweight value
-     * @param inMode             decimal rounding mode
+     * @param value decimal flyweight value
+     * @param context   helper
      * @return decimal flyweight according to the rounding mode or NAN
      * indicating overflow
      */
-    public static long round(final long inDecimalFlyweight,
-                             final int inDecimals,
-                             final DecimalRounding inMode) {
-        if (isNaN(inDecimalFlyweight) || inDecimals < 0 || inDecimals > DECIMALS_MAX) {
+    public static long round(final long value, final int decimals, final Decimal64.Context context) {
+        if (isNaN(value) || decimals < 0 || decimals > DECIMALS_MAX) {
             return NAN;
         }
 
-        final int decimals = -exponent(inDecimalFlyweight);
-        if (decimals == inDecimals) {
-            return inDecimalFlyweight;
+        final int decimalCount = -exponent(value);
+        if (decimalCount == decimals) {
+            return value;
         }
 
-        final long fixedScale = valueOf(Powers10[Math.abs(decimals - inDecimals)], 0);
+        final long fixedScale = valueOf(Powers10[Math.abs(decimalCount - decimals)], 0);
         final long rounded;
-        if (decimals > inDecimals) {
-            rounded = divide(inDecimalFlyweight, fixedScale, inMode);
+        if (decimalCount > decimals) {
+            rounded = divide(value, fixedScale, context);
         } else {
-            rounded = multiply(inDecimalFlyweight, fixedScale, inMode);
+            rounded = multiply(value, fixedScale, context);
         }
-
-        return encode(mantissa(rounded), -inDecimals);
+        return encode(mantissa(rounded), -decimals);
     }
 
     /**
@@ -437,8 +427,8 @@ public final class Decimal64Flyweight {
      * @param value decimal flyweight value
      * @return byte value
      */
-    public static byte byteValue(final long value) {
-        return (byte) longValue(value);
+    public static byte byteValue(final long value, final Decimal64.Context context) {
+        return (byte) longValue(value, context);
     }
 
     /**
@@ -447,8 +437,8 @@ public final class Decimal64Flyweight {
      * @param value decimal flyweight value
      * @return short value
      */
-    public static short shortValue(final long value) {
-        return (short) longValue(value);
+    public static short shortValue(final long value, final Decimal64.Context context) {
+        return (short) longValue(value, context);
     }
 
     /**
@@ -457,8 +447,8 @@ public final class Decimal64Flyweight {
      * @param value decimal flyweight value
      * @return integer value
      */
-    public static int intValue(final long value) {
-        return (int) longValue(value);
+    public static int intValue(final long value, final Decimal64.Context context) {
+        return (int) longValue(value, context);
     }
 
     /**
@@ -467,12 +457,11 @@ public final class Decimal64Flyweight {
      * @param value decimal flyweight value
      * @return long value or NAN indicating overflow
      */
-    public static long longValue(final long value) {
+    public static long longValue(final long value, Decimal64.Context context) {
         if (isNaN(value)) {
             return NAN;
         }
-
-        return mantissa(round(value, 0, DecimalRounding.UP));
+        return mantissa(round(value, 0, context));
     }
 
     /**
@@ -575,8 +564,7 @@ public final class Decimal64Flyweight {
     }
 
     /**
-     * Returns the product of two decimal flyweight values rounded according to
-     * the rounding mode.
+     * Returns the product of two decimal flyweight values rounded according to the rounding mode.
      * @param valueMantissa  scaled mantissa of the value
      * @param valueDecimals  unsigned decimal count of the value
      * @param factorMantissa scaled mantissa of the factor
@@ -587,7 +575,7 @@ public final class Decimal64Flyweight {
                                         final int valueDecimals,
                                         final long factorMantissa,
                                         final int factorDecimals,
-                                        final DecimalRounding inMode) {
+                                        final Decimal64.Context context) {
         final int decimals = Math.max(valueDecimals, factorDecimals);
         long product = Math.abs(valueMantissa * factorMantissa);
         if (valueDecimals != factorDecimals) {
@@ -595,9 +583,8 @@ public final class Decimal64Flyweight {
         }
 
         final long scale = Powers10[decimals];
-        final long rounding = scale >>> 1;
-        if (inMode == DecimalRounding.UP) {
-            product += rounding;
+        if (context.mode == DecimalRounding.UP) {
+            product += (scale >>> 1);
         }
         product /= scale;
 
@@ -608,8 +595,7 @@ public final class Decimal64Flyweight {
     }
 
     /**
-     * Returns the product of two decimal flyweight values rounded according to
-     * the rounding mode.
+     * Returns the product of two decimal flyweight values rounded according to the rounding mode.
      * @param valueMantissa  scaled mantissa of the value
      * @param valueDecimals  unsigned decimal count of the value
      * @param factorMantissa scaled mantissa of the factor
@@ -620,33 +606,36 @@ public final class Decimal64Flyweight {
                                            final int valueDecimals,
                                            final long factorMantissa,
                                            final int factorDecimals,
-                                           final DecimalRounding mode) {
-        final MutableUnsigned128 product = new MutableUnsigned128(Math.abs(valueMantissa));
-        final MutableUnsigned128 factor = new MutableUnsigned128(Math.abs(factorMantissa));
-        final long scaleDiff = Powers10[Math.abs(valueDecimals - factorDecimals)];
+                                           final Decimal64.Context context) {
+        final MutableUnsigned128 product = context.product.set(Math.abs(valueMantissa));
+        //final long scaleDiff = Powers10[Math.abs(valueDecimals - factorDecimals)];
         if (valueDecimals != factorDecimals) {
-            product.multiply(scaleDiff);
+            final long scale = Powers10[Math.abs(valueDecimals - factorDecimals)];
+            product.multiply(context.scale.set(scale));
         }
+
+        final MutableUnsigned128 factor = context.factor.set(Math.abs(factorMantissa));
+        //product.multiply(Math.abs(factorMantissa), context);
         product.multiply(factor);
 
         final long scale = Powers10[Math.max(valueDecimals, factorDecimals)];
-        final MutableUnsigned128 rounding = new MutableUnsigned128(scale).shiftRight(1);
-        if (rounding.isZero()) {
-            product.divide(scale);
+        if (scale == 1) {
+            product.divide(scale, context);
         } else {
-            final MutableUnsigned128 remainder = new MutableUnsigned128();
-
-            new MutableUnsigned128(product).divide(rounding, remainder);
+            final MutableUnsigned128 rounding = context.rounding.set(scale).shiftRight(1);
+            final MutableUnsigned128 q1 = context.q1.set(product);
+            final MutableUnsigned128 remainder = context.remainder2;
+            q1.divide(rounding, remainder, context);
             if (remainder.isZero()) {
-                product.divide(new MutableUnsigned128(scale), remainder);
-                if (remainder.compareTo(rounding) == 0 && mode == DecimalRounding.UP) {
+                product.divide(context.scale.set(scale), remainder, context);
+                if (remainder.compareTo(rounding) == 0 && context.mode == DecimalRounding.UP) {
                     product.increment();
                 }
             } else {
-                if (mode == DecimalRounding.UP) {
+                if (context.mode == DecimalRounding.UP) {
                     product.add(rounding);
                 }
-                product.divide(scale);
+                product.divide(scale, context);
             }
         }
         return mantissaValue(product, valueMantissa < 0 != factorMantissa < 0);
@@ -658,14 +647,14 @@ public final class Decimal64Flyweight {
      * @param dividendDecimals number of dividend decimals
      * @param inDivisorMantissa  scaled divisor mantissa
      * @param divisorDecimals  number of divisor decimals
-     * @param inMode             decimal rounding mode
+     * @param context         helper
      * @return signed 64-bit quotient
      */
     private static long roundedDivide(final long dividendMantissa,
                                       final int dividendDecimals,
                                       final long inDivisorMantissa,
                                       final int divisorDecimals,
-                                      final DecimalRounding inMode) {
+                                      final Decimal64.Context context) {
         long quotientMantissa = Math.abs(dividendMantissa);
         long divisorMantissa = Math.abs(inDivisorMantissa);
         int decimals = Math.max(divisorDecimals, dividendDecimals);
@@ -686,11 +675,11 @@ public final class Decimal64Flyweight {
             if (quotientMantissa % rounding == 0) {
                 final long remainder = quotientMantissa % divisorMantissa;
                 quotientMantissa /= divisorMantissa;
-                if (remainder == rounding && inMode == DecimalRounding.UP) {
+                if (remainder == rounding && context.mode == DecimalRounding.UP) {
                     ++quotientMantissa;
                 }
             } else {
-                if (inMode == DecimalRounding.UP) {
+                if (context.mode == DecimalRounding.UP) {
                     quotientMantissa += rounding;
                 }
                 quotientMantissa /= divisorMantissa;
@@ -708,43 +697,44 @@ public final class Decimal64Flyweight {
      * @param dividendDecimals number of dividend decimals
      * @param divisorMantissa  scaled divisor mantissa
      * @param divisorDecimals  number of divisor decimals
-     * @param mode             decimal rounding mode
+     * @param context          helper
      * @return signed 64-bit quotient
      */
     private static long roundedDivide128(final long dividendMantissa,
                                          final int dividendDecimals,
                                          final long divisorMantissa,
                                          final int divisorDecimals,
-                                         final DecimalRounding mode) {
+                                         final Decimal64.Context context) {
         final MutableUnsigned128 quotient = new MutableUnsigned128(Math.abs(dividendMantissa));
         final MutableUnsigned128 divisor = new MutableUnsigned128(Math.abs(divisorMantissa));
 
         if (dividendDecimals != divisorDecimals) {
             final long scale = Powers10[Math.abs(dividendDecimals - divisorDecimals)];
             if (dividendDecimals < divisorDecimals) {
-                quotient.multiply(scale);
+                quotient.multiply(scale, context);
             } else {
-                divisor.multiply(scale);
+                divisor.multiply(scale, context);
             }
         }
-        quotient.multiply(Powers10[Math.max(dividendDecimals, divisorDecimals)]);
+        quotient.multiply(Powers10[Math.max(dividendDecimals, divisorDecimals)], context);
 
         final MutableUnsigned128 rounding = new MutableUnsigned128(divisor).shiftRight(1);
         if (rounding.isZero()) {
-            quotient.divide(divisor);
+            quotient.divide(divisor, context);
         } else {
-            final MutableUnsigned128 remainder = new MutableUnsigned128();
-            new MutableUnsigned128(quotient).divide(rounding, remainder);
-            if (remainder.isZero()) {
-                quotient.divide(divisor, remainder);
-                if (remainder.compareTo(rounding) == 0 && mode == DecimalRounding.UP) {
+            //final MutableUnsigned128 remainder = new MutableUnsigned128();
+            //new MutableUnsigned128(quotient).divide(rounding, remainder); // FIXME
+            context.q1.set(quotient).divide(rounding, context.remainder2, context); // FIXME
+            if (context.remainder2.isZero()) {
+                quotient.divide(divisor, context.remainder2, context);
+                if (context.remainder2.compareTo(rounding) == 0 && context.mode == DecimalRounding.UP) {
                     quotient.increment();
                 }
             } else {
-                if (mode == DecimalRounding.UP) {
+                if (context.mode == DecimalRounding.UP) {
                     quotient.add(rounding);
                 }
-                quotient.divide(divisor);
+                quotient.divide(divisor, context);
             }
         }
         return mantissaValue(quotient, dividendMantissa < 0 != divisorMantissa < 0);

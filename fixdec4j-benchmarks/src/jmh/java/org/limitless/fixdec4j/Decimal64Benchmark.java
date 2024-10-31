@@ -18,6 +18,7 @@ public class Decimal64Benchmark {
 
     Decimal64 value = Decimal64.valueOf(10_888_800L, -2);
     Decimal64 decimal = Decimal64.valueOf(289, 5);
+    Decimal64.Context context = new Decimal64.Context(DecimalRounding.UP);
 
     @Benchmark
     public Decimal64 baseline() {
@@ -36,12 +37,12 @@ public class Decimal64Benchmark {
 
     @Benchmark
     public Decimal64 multiply() {
-        return value.multiply(decimal);
+        return value.multiply(decimal, context);
     }
 
     @Benchmark
     public Decimal64 divide() {
-        return value.divide(decimal);
+        return value.divide(decimal, context);
     }
 
     public static void main(String[] args) throws RunnerException {

@@ -87,7 +87,6 @@ public final class Decimal64 implements Comparable<Decimal64> {
         if (object == null || getClass() != object.getClass()) {
             return false;
         }
-
         return fixedDecimal == ((Decimal64) object).fixedDecimal;
     }
 
@@ -110,7 +109,6 @@ public final class Decimal64 implements Comparable<Decimal64> {
         if (value == null) {
             return 1;
         }
-
         return Decimal64Flyweight.compareTo(fixedDecimal, value.fixedDecimal);
     }
 
@@ -176,49 +174,25 @@ public final class Decimal64 implements Comparable<Decimal64> {
     /**
      * Returns the product of this instance and its argument rounding away from zero.
      * @param value factor
+     * @param context helper
      * @return a new instance with the product or NAN indicating overflow.
      */
-    public Decimal64 multiply(final Decimal64 value) {
-        return new Decimal64(Decimal64Flyweight.multiply(fixedDecimal, value.fixedDecimal, DecimalRounding.UP));
-    }
-
-    /**
-     * Returns the product of this instance and its argument.
-     * @param value factor
-     * @param mode  decimal rounding mode
-     * @return a new instance with the product or NAN indicating overflow.
-     */
-    public Decimal64 multiply(final Decimal64 value, final DecimalRounding mode) {
-        return new Decimal64(Decimal64Flyweight.multiply(fixedDecimal, value.fixedDecimal, mode));
-    }
-
-    /**
-     * Returns the quotient of this instance and its argument rounding away from zero.
-     * @param value divisor
-     * @return a new instance with the quotient or NAN indicating overflow.
-     */
-    public Decimal64 divide(final Decimal64 value) {
-        return new Decimal64(Decimal64Flyweight.divide(fixedDecimal, value.fixedDecimal, DecimalRounding.UP));
+    public Decimal64 multiply(final Decimal64 value, final Decimal64.Context context) {
+        return new Decimal64(Decimal64Flyweight.multiply(fixedDecimal, value.fixedDecimal, context));
     }
 
     /**
      * Returns the quotient of this instance.
      * @param value divisor
-     * @param mode  decimal rounding mode
+     * @param context helper
      * @return a new instance with the quotient or NAN indicating overflow.
      */
-    public Decimal64 divide(final Decimal64 value, final DecimalRounding mode) {
-        return new Decimal64(Decimal64Flyweight.divide(fixedDecimal, value.fixedDecimal, mode));
+    public Decimal64 divide(final Decimal64 value, final Decimal64.Context context) {
+        return new Decimal64(Decimal64Flyweight.divide(fixedDecimal, value.fixedDecimal, context));
     }
 
-    /**
-     * Returns a decimal instance rounded according to the decimal rounding mode.
-     * @param decimals decimal value
-     * @param mode     rounding mode
-     * @return new instance rounded according to the rounding mode or NAN indicating overflow
-     */
-    public Decimal64 round(int decimals, DecimalRounding mode) {
-        return new Decimal64(Decimal64Flyweight.round(fixedDecimal, decimals, mode));
+    public Decimal64 round(int decimals, Decimal64.Context context) {
+        return new Decimal64(Decimal64Flyweight.round(fixedDecimal, decimals, context));
     }
 
     /**
@@ -231,34 +205,37 @@ public final class Decimal64 implements Comparable<Decimal64> {
 
     /**
      * Returns the value of the specified number as a byte, which may involve rounding or truncation.
+     * @param context helper
      * @return byte value
      */
-    public byte byteValue() {
-        return Decimal64Flyweight.byteValue(fixedDecimal);
+    public byte byteValue(final Decimal64.Context context) {
+        return Decimal64Flyweight.byteValue(fixedDecimal, context);
     }
 
     /**
      * Returns the value of the specified number as a short, which may involve rounding or truncation.
+     * @param context helper
      * @return short value
      */
-    public short shortValue() {
-        return Decimal64Flyweight.shortValue(fixedDecimal);
+    public short shortValue(Decimal64.Context context) {
+        return Decimal64Flyweight.shortValue(fixedDecimal, context);
     }
 
     /**
      * Returns the value of the specified number as an integer, which may involve rounding or truncation.
+     * @param context helper
      * @return integer value
      */
-    public int intValue() {
-        return Decimal64Flyweight.intValue(fixedDecimal);
+    public int intValue(Decimal64.Context context) {
+        return Decimal64Flyweight.intValue(fixedDecimal, context);
     }
 
     /**
      * Returns the value of the specified number as an integer, which may involve rounding or truncation.
      * @return long value
      */
-    public long longValue() {
-        return Decimal64Flyweight.longValue(fixedDecimal);
+    public long longValue(Decimal64.Context context) {
+        return Decimal64Flyweight.longValue(fixedDecimal, context);
     }
 
     /**
@@ -292,5 +269,12 @@ public final class Decimal64 implements Comparable<Decimal64> {
      */
     public static Decimal64 fromLongBits(final long inFixedValue) {
         return new Decimal64(inFixedValue);
+    }
+
+    public static class Context extends MutableUnsigned128.Context {
+
+        public Context(DecimalRounding mode) {
+            super(mode);
+        }
     }
 }

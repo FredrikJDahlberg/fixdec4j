@@ -13,35 +13,35 @@ import java.util.concurrent.TimeUnit;
 @Measurement(iterations = 2, time = 5)
 @OutputTimeUnit(TimeUnit.NANOSECONDS)
 @BenchmarkMode(Mode.AverageTime)
-public class MutableDecimal64Benchmark {
+public class MutableUnsigned128Benchmark {
 
-    MutableDecimal64 value = MutableDecimal64.valueOf(12312310_00L, -2);
-    MutableDecimal64 decimal = MutableDecimal64.valueOf(3452, 5);
-    MutableDecimal64.Context context = new MutableDecimal64.Context(DecimalRounding.UP);
+    MutableUnsigned128 unsigned = new MutableUnsigned128(100_0000L, 200_000L);
+    MutableUnsigned128 factor = new MutableUnsigned128(400_000L);
+    MutableUnsigned128.Context context = new MutableUnsigned128.Context(DecimalRounding.UP);
 
     @Benchmark
-    public MutableDecimal64 baseline() {
-        return MutableDecimal64.ZERO;
+    public MutableUnsigned128 baseline() {
+        return unsigned;
     }
 
     @Benchmark
-    public MutableDecimal64 add() {
-        return value.add(decimal);
+    public MutableUnsigned128 add() {
+        return unsigned.add(factor);
     }
 
     @Benchmark
-    public MutableDecimal64 subtract() {
-        return value.subtract(decimal);
+    public MutableUnsigned128 subtract() {
+        return unsigned.subtract(factor);
     }
 
     @Benchmark
-    public MutableDecimal64 multiply() {
-        return value.multiply(decimal, context);
+    public MutableUnsigned128 multiply() {
+        return unsigned.multiply(factor);
     }
 
     @Benchmark
-    public MutableDecimal64 divide() {
-        return value.divide(decimal, context);
+    public MutableUnsigned128 divide() {
+        return unsigned.divide(factor, context);
     }
 
     public static void main(String[] args) throws RunnerException {

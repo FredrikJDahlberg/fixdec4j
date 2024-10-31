@@ -13,9 +13,7 @@ public class Unsigned64FlyweightTest {
         assertEquals(10_000L + 20_000L, Unsigned64Flyweight.add(10_000, 20_000));
         assertEquals(-10_000L + 20_000L, Unsigned64Flyweight.add(-10_000, 20_000));
         assertEquals(10_000L + -20_000L, Unsigned64Flyweight.add(10_000, -20_000));
-
         assertEquals(-2, Unsigned64Flyweight.add(MAX, MAX));
-        System.out.format("%016x + %016x = %016x%n", MIN, MIN, MIN + MIN);
         assertEquals(0, Unsigned64Flyweight.add(MIN, MIN)); // overflow: 2^64 % 2^63
     }
 
@@ -26,9 +24,7 @@ public class Unsigned64FlyweightTest {
         assertEquals(10_000L - -20_000L, Unsigned64Flyweight.subtract(10_000, -20_000));
         assertEquals(0, Unsigned64Flyweight.subtract(MAX, MAX));
         assertEquals(0, Unsigned64Flyweight.subtract(MIN, MIN));
-        System.out.format("%016x - %016x = %016x%n", MIN, MAX, MIN - MAX);
         assertEquals(1, Unsigned64Flyweight.subtract(MIN, MAX));
-        System.out.format("%016x - %016x = %016x%n", MAX, MIN, MAX - MIN);
         assertEquals(-1, Unsigned64Flyweight.subtract(MAX, MIN));
     }
 
@@ -37,14 +33,10 @@ public class Unsigned64FlyweightTest {
         assertEquals(10_000L * 20_000L, Unsigned64Flyweight.multiply(10_000, 20_000));
         assertEquals(-10_000L * 20_000L, Unsigned64Flyweight.multiply(-10_000, 20_000));
         assertEquals(10_000L * -20_000L, Unsigned64Flyweight.multiply(10_000, -20_000));
-        System.out.format("%016x * %016x = %016x%n", MAX, MAX, MAX * MAX);
         assertEquals(1, Unsigned64Flyweight.multiply(MAX, MAX));
         assertEquals(0, Unsigned64Flyweight.multiply(MIN, MIN));
-// System.out.format("%016x * %016x = %016x%n", MIN, MAX, MIN * MAX);
-// assertEquals(1, Unsigned.multiply(MIN, MAX));
-
-// System.out.format("%016x * %016x = %016x%n", MAX, MIN, MAX * MIN);
-// assertEquals(-1, Unsigned.multiply(MAX, MIN));
+        assertEquals(MIN, Unsigned64Flyweight.multiply(MIN, MAX));
+        assertEquals(MIN, Unsigned64Flyweight.multiply(MAX, MIN));
     }
 
     @Test
@@ -78,7 +70,6 @@ public class Unsigned64FlyweightTest {
         assertEquals(1, Unsigned64Flyweight.compare(0x83000000L, 0x81000000L));
         assertEquals(-1, Unsigned64Flyweight.compare(0x82000000L, 0x84000000L));
         assertEquals(0, Unsigned64Flyweight.compare(0x82000000L, 0x82000000L));
-
         assertEquals(-1, Unsigned64Flyweight.compare(0, -1));
     }
 

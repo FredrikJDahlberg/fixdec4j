@@ -351,7 +351,7 @@ public final class Decimal64Flyweight {
      * @return rounded quotient 64-bit fixed decimal flyweight
      */
     public static long divide(final long dividend, final long divisor, final Decimal64.Context context) {
-        if (isNaN(dividend) || isNaN(divisor) || divisor == 0) {
+        if (isNaN(dividend) || isNaN(divisor) || isZero(divisor)) {
             return NAN;
         }
 
@@ -359,12 +359,13 @@ public final class Decimal64Flyweight {
         final int divisorDecimals = -exponent(divisor);
         final long dividendMantissa = mantissa(dividend);
         final long divisorMantissa = mantissa(divisor);
-        int quotientPower2 = Unsigned64Flyweight.numberOfBits(dividend);
+        // Estimate on magnitudes, roundedDivide operates on absolute values
+        int quotientPower2 = Unsigned64Flyweight.numberOfBits(Math.abs(dividendMantissa)) + (int) DECIMAL_BITS;
         if (dividendDecimals != divisorDecimals) {
             if (dividendDecimals < divisorDecimals) {
-                quotientPower2 += Unsigned64Flyweight.numberOfBits(dividendMantissa);
+                quotientPower2 += Unsigned64Flyweight.numberOfBits(Math.abs(dividendMantissa));
             } else {
-                quotientPower2 += Unsigned64Flyweight.numberOfBits(divisorMantissa);
+                quotientPower2 += Unsigned64Flyweight.numberOfBits(Math.abs(divisorMantissa));
             }
         }
 
@@ -548,8 +549,10 @@ public final class Decimal64Flyweight {
         final long f1_10_000_000 = (1L << 60) / 1_000_000_000L;
         final long low = value % 10_000_000_000L;
         final long high = value / 10_000_000_000L;
-        long loValue = low * (f1_10_000_000 + 1) - (low / 4);
-        long hiValue = high * (f1_10_000_000 + 1) - (high / 4);
+        // 2^60 / 10^9 = f1_10_000_000 + 0.393..., the corrections keep the fixed point value above the
+        // exact value by less than one unit of the last digit (up to 10^10 - 1)
+        long loValue = low * (f1_10_000_000 + 1) - (low / 4) - (low / 8);
+        long hiValue = high * (f1_10_000_000 + 1) - (high / 4) - (high / 8);
         long mask = Long.MAX_VALUE >>> 3;
         long shift = 60;
         for(int i = 0; i < 10; ++i) {
@@ -665,22 +668,12 @@ public final class Decimal64Flyweight {
         }
         quotientMantissa *= Powers10[decimals];
 
-        final long rounding = divisorMantissa >>> 1;
-        if (rounding == 0) {
-            quotientMantissa /= divisorMantissa;
-        } else {
-            if (quotientMantissa % rounding == 0) {
-                final long remainder = quotientMantissa % divisorMantissa;
-                quotientMantissa /= divisorMantissa;
-                if (remainder == rounding && context.mode == DecimalRounding.UP) {
-                    ++quotientMantissa;
-                }
-            } else {
-                if (context.mode == DecimalRounding.UP) {
-                    quotientMantissa += rounding;
-                }
-                quotientMantissa /= divisorMantissa;
-            }
+        final long dividend = quotientMantissa;
+        quotientMantissa = dividend / divisorMantissa;
+        final long remainder = dividend - quotientMantissa * divisorMantissa;
+        // Round half up, i.e. when remainder / divisor >= 0.5
+        if (context.mode == DecimalRounding.UP && remainder >= divisorMantissa - remainder) {
+            ++quotientMantissa;
         }
         if ((inDivisorMantissa < 0) != (dividendMantissa < 0)) {
             quotientMantissa = -quotientMantissa;
@@ -702,8 +695,8 @@ public final class Decimal64Flyweight {
                                          final long divisorMantissa,
                                          final int divisorDecimals,
                                          final Decimal64.Context context) {
-        final MutableUnsigned128 quotient = new MutableUnsigned128(Math.abs(dividendMantissa));
-        final MutableUnsigned128 divisor = new MutableUnsigned128(Math.abs(divisorMantissa));
+        final MutableUnsigned128 quotient = context.product.set(Math.abs(dividendMantissa));
+        final MutableUnsigned128 divisor = context.divisor.set(Math.abs(divisorMantissa));
 
         if (dividendDecimals != divisorDecimals) {
             final long scale = Powers10[Math.abs(dividendDecimals - divisorDecimals)];
@@ -715,22 +708,12 @@ public final class Decimal64Flyweight {
         }
         quotient.multiply(Powers10[Math.max(dividendDecimals, divisorDecimals)], context);
 
-        final MutableUnsigned128 rounding = new MutableUnsigned128(divisor).shiftRight(1);
-        if (rounding.isZero()) {
-            quotient.divide(divisor, context);
-        } else {
-            context.q1.set(quotient).divide(rounding, context.remainder2, context);
-            if (context.remainder2.isZero()) {
-                quotient.divide(divisor, context.remainder2, context);
-                if (context.remainder2.compareTo(rounding) == 0 && context.mode == DecimalRounding.UP) {
-                    quotient.increment();
-                }
-            } else {
-                if (context.mode == DecimalRounding.UP) {
-                    quotient.add(rounding);
-                }
-                quotient.divide(divisor, context);
-            }
+        final MutableUnsigned128 remainder = context.remainder1;
+        quotient.divide(divisor, remainder, context);
+        // Round half up, i.e. when remainder / divisor >= 0.5
+        if (context.mode == DecimalRounding.UP &&
+            remainder.compareTo(context.rounding.set(divisor).subtract(remainder)) >= 0) {
+            quotient.increment();
         }
         return mantissaValue(quotient, dividendMantissa < 0 != divisorMantissa < 0);
     }
@@ -759,7 +742,8 @@ public final class Decimal64Flyweight {
         long mantissa = MANTISSA_ERROR;
         if (value.fitsLong()) {
             mantissa = value.longValue();
-            if (mantissa >= MANTISSA_MIN && mantissa <= MANTISSA_MAX) {
+            // value is unsigned, 2^63 and above reads as a negative long
+            if (mantissa >= 0 && mantissa <= MANTISSA_MAX) {
                 if (signed) {
                     mantissa = -mantissa;
                 }
@@ -770,36 +754,28 @@ public final class Decimal64Flyweight {
         return mantissa;
     }
 
-    // limit encoded digit count
-    private static final long[] digitsBase2 = {
-        4294967296L,  8589934582L,  8589934582L,
-        8589934582L,  12884901788L, 12884901788L,
-        12884901788L, 17179868184L, 17179868184L,
-        17179868184L, 21474826480L, 21474826480L,
-        21474826480L, 21474826480L, 25769703776L,
-        25769703776L, 25769703776L, 30063771072L,
-        30063771072L, 30063771072L, 34349738368L,
-        34349738368L, 34349738368L, 34349738368L,
-        38554705664L, 38554705664L, 38554705664L,
-        41949672960L, 41949672960L, 41949672960L,
-        42949672960L, 42949672960L,
-    };
-
-    private static final int INT_MAX_DIGITS = digitsBase10(Integer.MAX_VALUE);
-
+    /**
+     * Returns the number of decimal digits of a non-negative value, e.g. 1 for 0 and 4 for 4711.
+     * The number of bits times log10(2) (1233 / 4096) is either the digit count or one less.
+     * @param value non-negative value
+     * @return number of decimal digits
+     */
     public static int digitsBase10(int value) {
-        int count = Integer.SIZE - Integer.numberOfLeadingZeros(value);
-        return (int) ((value + digitsBase2[count]) >>> 32);
+        final int bits = Integer.SIZE - Integer.numberOfLeadingZeros(value | 1);
+        final int digits = (bits * 1233) >>> 12;
+        return (value | 1) >= Powers10[digits] ? digits + 1 : digits;
     }
 
+    /**
+     * Returns the number of decimal digits of a non-negative value, e.g. 1 for 0 and 4 for 4711.
+     * The number of bits times log10(2) (1233 / 4096) is either the digit count or one less.
+     * @param value non-negative value
+     * @return number of decimal digits
+     */
     public static int digitsBase10(long value) {
-        final int digits;
-        if (value <= Integer.MAX_VALUE) {
-            digits = digitsBase10((int) value);
-        } else {
-            digits = digitsBase10(value >>> Integer.SIZE) + INT_MAX_DIGITS - 1;
-        }
-        return digits;
+        final int bits = Long.SIZE - Long.numberOfLeadingZeros(value | 1);
+        final int digits = (bits * 1233) >>> 12;
+        return (value | 1) >= Powers10[digits] ? digits + 1 : digits;
     }
 
     private static final long[] Powers10 = {

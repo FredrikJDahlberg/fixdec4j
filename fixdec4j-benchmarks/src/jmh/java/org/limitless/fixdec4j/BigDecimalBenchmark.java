@@ -10,19 +10,32 @@ import java.math.RoundingMode;
 import java.util.concurrent.TimeUnit;
 
 @State(Scope.Thread)
-@Fork(jvmArgsAppend = "-server", value = 1)
-@Warmup(iterations = 2, time = 5)
-@Measurement(iterations = 2, time = 10)
+@Fork(3)
+@Warmup(iterations = 5, time = 1)
+@Measurement(iterations = 5, time = 1)
 @OutputTimeUnit(TimeUnit.NANOSECONDS)
 @BenchmarkMode(Mode.AverageTime)
 public class BigDecimalBenchmark {
 
-    BigDecimal value = BigDecimal.valueOf(1231231231, -5);
-    BigDecimal decimal = BigDecimal.valueOf(12334, 2);
+    @Param
+    Operands operands;
+
+    // Multiply and divide round to the largest number of decimals of the operands, matching the
+    // fixed decimal implementations.
+    BigDecimal value;
+    BigDecimal decimal;
+    int decimals;
+
+    @Setup
+    public void setup() {
+        value = operands.bigValue1();
+        decimal = operands.bigValue2();
+        decimals = operands.decimals();
+    }
 
     @Benchmark
     public BigDecimal baseline() {
-        return BigDecimal.ZERO;
+        return value;
     }
 
     @Benchmark
@@ -37,12 +50,12 @@ public class BigDecimalBenchmark {
 
     @Benchmark
     public BigDecimal multiply() {
-        return value.multiply(decimal);
+        return value.multiply(decimal).setScale(decimals, RoundingMode.HALF_UP);
     }
 
     @Benchmark
     public BigDecimal divide() {
-        return value.divide(decimal, RoundingMode.UP);
+        return value.divide(decimal, decimals, RoundingMode.HALF_UP);
     }
 
     public static void main(String[] args) throws RunnerException {

@@ -8,20 +8,33 @@ import org.openjdk.jmh.runner.options.OptionsBuilder;
 import java.util.concurrent.TimeUnit;
 
 @State(Scope.Thread)
-@Fork(jvmArgsAppend = "-server", value = 1)
-@Warmup(iterations = 2, time = 5)
-@Measurement(iterations = 2, time = 5)
+@Fork(3)
+@Warmup(iterations = 5, time = 1)
+@Measurement(iterations = 5, time = 1)
 @OutputTimeUnit(TimeUnit.NANOSECONDS)
 @BenchmarkMode(Mode.AverageTime)
 public class DoubleBenchmark {
 
-    double rounding = 10_000D;
-    double value1 = 4711.2345D;
-    double value2 = 34566.12344D;
+    @Param
+    Operands operands;
+
+    // Results are rounded to the largest number of decimals of the operands, matching the fixed
+    // decimal implementations. Doubles are not exact: rounding a value above 2^53 (e.g. the LARGE
+    // product scaled by 10^6) can be off in the last decimal, so results are not verified.
+    double rounding;
+    double value1;
+    double value2;
+
+    @Setup
+    public void setup() {
+        rounding = Math.pow(10, operands.decimals());
+        value1 = operands.mantissa1 / Math.pow(10, operands.decimals1);
+        value2 = operands.mantissa2 / Math.pow(10, operands.decimals2);
+    }
 
     @Benchmark
     public double baseline() {
-        return 0.0D;
+        return value1;
     }
 
     @Benchmark
@@ -30,7 +43,7 @@ public class DoubleBenchmark {
     }
 
     @Benchmark
-    public double minus() {
+    public double subtract() {
         return Math.round(rounding * (value1 - value2)) / rounding;
     }
 

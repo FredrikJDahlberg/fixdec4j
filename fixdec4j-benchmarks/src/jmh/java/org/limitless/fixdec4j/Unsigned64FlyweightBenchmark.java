@@ -8,39 +8,39 @@ import org.openjdk.jmh.runner.options.OptionsBuilder;
 import java.util.concurrent.TimeUnit;
 
 @State(Scope.Thread)
-@Fork(jvmArgsAppend = "-server", value = 1)
-@Warmup(iterations = 2, time = 5)
-@Measurement(iterations = 2, time = 10)
+@Fork(3)
+@Warmup(iterations = 5, time = 1)
+@Measurement(iterations = 5, time = 1)
 @OutputTimeUnit(TimeUnit.NANOSECONDS)
 @BenchmarkMode(Mode.AverageTime)
 public class Unsigned64FlyweightBenchmark {
 
-    long value = 12321123132L;
-    long decimal = 5674564L;
+    long value = IntegerOperands.VALUE;
+    long operand = IntegerOperands.OPERAND;
 
     @Benchmark
     public long baseline() {
-        return 0;
+        return value;
     }
 
     @Benchmark
     public long add() {
-        return Unsigned64Flyweight.add(value, decimal);
+        return Unsigned64Flyweight.add(value, operand);
     }
 
     @Benchmark
     public long subtract() {
-        return Unsigned64Flyweight.subtract(value, decimal);
+        return Unsigned64Flyweight.subtract(value, operand);
     }
 
     @Benchmark
     public long multiply() {
-        return Unsigned64Flyweight.multiply(value, decimal);
+        return Unsigned64Flyweight.multiply(value, operand);
     }
 
     @Benchmark
     public long divide() {
-        return Unsigned64Flyweight.divide(value, decimal);
+        return Unsigned64Flyweight.divide(value, operand);
     }
 
     public static void main(String[] args) throws RunnerException {

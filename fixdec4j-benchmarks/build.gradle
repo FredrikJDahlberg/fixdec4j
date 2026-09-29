@@ -17,5 +17,6 @@ dependencies {
 }
 
 jmh {
-    includes = ['Benchmark']
+    // Select benchmarks with a regexp, e.g. ./gradlew jmh -Pbenchmarks=Decimal64Flyweight
+    includes = [project.findProperty('benchmarks') ?: 'Benchmark']
 }

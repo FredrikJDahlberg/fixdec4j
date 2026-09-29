@@ -1,42 +1,49 @@
 package org.limitless.fixdec4j;
 
 import org.openjdk.jmh.annotations.*;
+import org.openjdk.jmh.runner.Runner;
+import org.openjdk.jmh.runner.RunnerException;
+import org.openjdk.jmh.runner.options.OptionsBuilder;
 
 import java.util.concurrent.TimeUnit;
 
 @State(Scope.Thread)
-@Fork(jvmArgsAppend = "-server", value = 1)
-@Warmup(iterations = 2, time = 5)
-@Measurement(iterations = 2, time = 10)
+@Fork(3)
+@Warmup(iterations = 5, time = 1)
+@Measurement(iterations = 5, time = 1)
 @OutputTimeUnit(TimeUnit.NANOSECONDS)
 @BenchmarkMode(Mode.AverageTime)
 public class LongBenchmark {
 
-    long value1 = 4_711_000_000L;
-    long value2 = 125_245L;
+    long value = IntegerOperands.VALUE;
+    long operand = IntegerOperands.OPERAND;
 
     @Benchmark
     public long baseline() {
-        return 0;
+        return value;
     }
 
     @Benchmark
     public long add() {
-        return value1 + value2;
+        return value + operand;
     }
 
     @Benchmark
     public long subtract() {
-        return value1 - value2;
+        return value - operand;
     }
 
     @Benchmark
     public long multiply() {
-        return value1 * value2;
+        return value * operand;
     }
 
     @Benchmark
     public long divide() {
-        return value1 / value2;
+        return value / operand;
+    }
+
+    public static void main(String[] args) throws RunnerException {
+        new Runner(new OptionsBuilder().include(LongBenchmark.class.getSimpleName()).build()).run();
     }
 }

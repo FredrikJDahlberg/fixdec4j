@@ -45,6 +45,12 @@ Run benchmarks:
 
     $ ./gradlew jmh
 
+Run a subset of the benchmarks (regexp):
+
+    $ ./gradlew jmh -Pbenchmarks=Decimal64Flyweight
+
+The decimal benchmarks are parameterized with the same operands (see `Operands`), `SMALL` fits the 64-bit fast path and `LARGE` requires 128-bit intermediates, so timings are comparable across implementations. The fixed decimal results are verified against `BigDecimal` before each run. `double` is approximate and may differ in the last decimal (e.g. the `LARGE` product).
+
 License (See LICENSE file for full license)
 -------------------------------------------
 

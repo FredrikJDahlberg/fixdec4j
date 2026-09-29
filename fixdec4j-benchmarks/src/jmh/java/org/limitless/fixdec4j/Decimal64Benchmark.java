@@ -8,20 +8,30 @@ import org.openjdk.jmh.runner.options.OptionsBuilder;
 import java.util.concurrent.TimeUnit;
 
 @State(Scope.Thread)
-@Fork(jvmArgsAppend = "-server", value = 1)
-@Warmup(iterations = 2, time = 5)
-@Measurement(iterations = 2, time = 10)
+@Fork(3)
+@Warmup(iterations = 5, time = 1)
+@Measurement(iterations = 5, time = 1)
 @OutputTimeUnit(TimeUnit.NANOSECONDS)
 @BenchmarkMode(Mode.AverageTime)
 public class Decimal64Benchmark {
 
-    Decimal64 value = Decimal64.valueOf(10_888_800L, -2);
-    Decimal64 decimal = Decimal64.valueOf(289, 5);
+    @Param
+    Operands operands;
+
+    Decimal64 value;
+    Decimal64 decimal;
     Decimal64.Context context = new Decimal64.Context(DecimalRounding.UP);
+
+    @Setup
+    public void setup() {
+        value = Decimal64.fromLongBits(operands.value1());
+        decimal = Decimal64.fromLongBits(operands.value2());
+        operands.verify(add().toLongBits(), subtract().toLongBits(), multiply().toLongBits(), divide().toLongBits());
+    }
 
     @Benchmark
     public Decimal64 baseline() {
-        return Decimal64.ZERO;
+        return value;
     }
 
     @Benchmark
@@ -30,7 +40,7 @@ public class Decimal64Benchmark {
     }
 
     @Benchmark
-    public Decimal64 minus() {
+    public Decimal64 subtract() {
         return value.subtract(decimal);
     }
 

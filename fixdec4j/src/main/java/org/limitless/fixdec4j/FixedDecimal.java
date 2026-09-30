@@ -1,6 +1,7 @@
 package org.limitless.fixdec4j;
 
 import java.math.BigDecimal;
+import java.util.Objects;
 
 /**
  * A fixed number of decimals and the arithmetic on values with that scale. A value is a long
@@ -98,13 +99,30 @@ public record FixedDecimal<S>(int decimals) {
     }
 
     /**
-     * Returns a value parsed from a string, rounded if it has more decimals than the scale.
-     * @param value   decimal string, e.g. "-101.25"
+     * Returns a value parsed from a string, rounded if it has more decimals than the scale. A plain
+     * decimal is parsed without allocating; exponent notation, e.g. "1.5E3", is also accepted.
+     * @param value   decimal string, e.g. "-101.25", or any CharSequence such as a view of a buffer
      * @param context rounding mode
      * @return value, or NAN indicating overflow or an invalid string
      */
-    public long valueOf(final String value, final DecimalContext context) {
+    public long valueOf(final CharSequence value, final DecimalContext context) {
         return FixedFlyweight.valueOf(value, decimals, context);
+    }
+
+    /**
+     * Returns a value parsed from ASCII bytes, e.g. a field of a FIX message, rounded if it has more
+     * decimals than the scale. A plain decimal is parsed eight digits at a time without allocating;
+     * exponent notation is also accepted.
+     * @param bytes   buffer
+     * @param offset  index of the first byte
+     * @param length  number of bytes
+     * @param context rounding mode
+     * @return value, or NAN indicating overflow or an invalid string
+     * @throws IndexOutOfBoundsException if the range is outside the buffer
+     */
+    public long valueOf(final byte[] bytes, final int offset, final int length, final DecimalContext context) {
+        Objects.checkFromIndexSize(offset, length, bytes.length);
+        return FixedFlyweight.valueOf(bytes, offset, length, decimals, context);
     }
 
     /**

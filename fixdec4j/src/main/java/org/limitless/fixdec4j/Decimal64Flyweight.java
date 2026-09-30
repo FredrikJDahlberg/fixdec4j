@@ -535,26 +535,38 @@ public final class Decimal64Flyweight {
         if (isNaN(value)) {
             return "NaN";
         }
+        return toString(mantissa(value), -exponent(value));
+    }
 
-        // The digits of m / 10^d are the digits of m with a point inserted before the last d digits
-        final int decimals = -exponent(value);
-        final long mantissa = mantissa(value);
+    /**
+     * Returns the plain string of mantissa / 10^decimals with exactly that many decimals, e.g.
+     * "-0.0120" for -120 and 4 decimals.
+     * @param mantissa mantissa, not Long.MIN_VALUE
+     * @param decimals number of decimals, at most 18
+     * @return string
+     */
+    static String toString(final long mantissa, final int decimals) {
+        // The digits of m / 10^d are the digits of m with a point inserted before the last d digits.
+        // 24 zero padded digits are written at 0..23, eight at a time, then the last d digits are
+        // moved one position right to make room for the point.
         final long magnitude = Math.abs(mantissa);
-        final byte[] buffer = new byte[22];
-        longToString(magnitude, 1, buffer); // 20 zero padded digits at 1..20
-        final int digits = Math.max(digitsBase10(magnitude), decimals + 1);
-        int start = 21 - digits;
-        int length = digits;
+        final byte[] buffer = new byte[25];
+        final long upper = magnitude / 100_000_000L;
+        final long top = magnitude / 10_000_000_000_000_000L; // below 1000
+        Swar.store(buffer, 0, Swar.formatDigits((int) top));
+        Swar.store(buffer, 8, Swar.formatDigits((int) (upper - top * 100_000_000L)));
+        Swar.store(buffer, 16, Swar.formatDigits((int) (magnitude - upper * 100_000_000L)));
+        int start = 24 - Math.max(digitsBase10(magnitude), decimals + 1);
+        int end = 24;
         if (decimals > 0) {
-            System.arraycopy(buffer, 21 - decimals, buffer, 22 - decimals, decimals);
-            buffer[21 - decimals] = '.';
-            ++length;
+            System.arraycopy(buffer, 24 - decimals, buffer, 25 - decimals, decimals);
+            buffer[24 - decimals] = '.';
+            end = 25;
         }
         if (mantissa < 0) {
             buffer[--start] = '-';
-            ++length;
         }
-        return new String(buffer, start, length, StandardCharsets.ISO_8859_1);
+        return new String(buffer, start, end - start, StandardCharsets.ISO_8859_1);
     }
 
     /**

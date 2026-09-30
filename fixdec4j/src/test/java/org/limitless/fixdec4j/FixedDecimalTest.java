@@ -4,6 +4,8 @@ import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
 import java.util.SplittableRandom;
 import java.util.function.Supplier;
 
@@ -175,6 +177,119 @@ public class FixedDecimalTest {
         assertEquals(0L, QTY.valueOf("0E+1000000", HALF_UP));
         assertThrows(ArithmeticException.class, () -> QTY.toBigDecimal(FixedDecimal.NAN));
         assertFalse(FixedDecimal.isNaN(0));
+    }
+
+    @Test
+    public void parseMatchesBigDecimal() {
+        final String[] strings = {"", "-", "+", ".", "-.", "+.", "..", "1..", "1.2.3", " 1", "1 ", "--1", "+-1", "1-",
+            "NaN", "nan", "Infinity", "0x10", "1,5", "0", "-0", "+0", "0.", ".0", "-.5", "+.5", "5.", "007.50",
+            "00000000000000000000000000001", "9223372036854775807", "9223372036854775808", "-9223372036854775807",
+            "-9223372036854775808", "92233720368547758.07", "92233720368547758.075", "-92233720368547758.075",
+            "0.005", "0.015", "0.025", "-0.005", "0.0050000000000000000001", "0.0049999999999999999999",
+            "1e2", "1E-2", "1.5e+3", "-1.25E1", "1e", "e1", "1e2.5", "١٢", "1٢"};
+        for (final DecimalRounding mode : DecimalRounding.values()) {
+            final DecimalContext context = new DecimalContext(mode);
+            for (int decimals = 0; decimals <= FixedDecimal.DECIMALS_MAX; decimals++) {
+                final FixedDecimal<?> scale = FixedDecimal.of(decimals);
+                for (final String string : strings) {
+                    assertParse(scale, string, context);
+                }
+            }
+        }
+
+        final SplittableRandom random = new SplittableRandom(56);
+        final StringBuilder builder = new StringBuilder();
+        for (int i = 0; i < 500_000; i++) {
+            builder.setLength(0);
+            final int sign = random.nextInt(4);
+            if (sign == 0) {
+                builder.append('-');
+            } else if (sign == 1) {
+                builder.append('+');
+            }
+            final int integerDigits = random.nextInt(22);
+            final int fractionDigits = random.nextInt(-1, 14); // -1 for no point
+            for (int d = 0; d < integerDigits; d++) {
+                builder.append(randomDigit(random));
+            }
+            if (fractionDigits >= 0) {
+                builder.append('.');
+                for (int d = 0; d < fractionDigits; d++) {
+                    builder.append(randomDigit(random));
+                }
+            }
+            final DecimalRounding mode = DecimalRounding.values()[random.nextInt(DecimalRounding.values().length)];
+            assertParse(randomScale(random), builder.toString(), new DecimalContext(mode));
+        }
+    }
+
+    @Test
+    public void formatMatchesBigDecimal() {
+        final SplittableRandom random = new SplittableRandom(57);
+        final long[] edges = {0, 1, -1, 9, 10, 99, 100, Long.MAX_VALUE, -Long.MAX_VALUE, 999_999_999, 1_000_000_000,
+            9_999_999_999L, 10_000_000_000L, -10_000_000_000L};
+        for (int decimals = 0; decimals <= FixedDecimal.DECIMALS_MAX; decimals++) {
+            final FixedDecimal<?> scale = FixedDecimal.of(decimals);
+            for (final long value : edges) {
+                assertFormat(scale, value);
+            }
+        }
+        for (int i = 0; i < 500_000; i++) {
+            final long value = randomValue(random);
+            if (value != FixedDecimal.NAN) {
+                assertFormat(randomScale(random), value);
+            }
+        }
+    }
+
+    private static void assertFormat(final FixedDecimal<?> scale, final long value) {
+        final String string = scale.toString(value);
+        assertEquals(BigDecimal.valueOf(value, scale.decimals()).toPlainString(), string);
+        assertEquals(value, scale.valueOf(string, HALF_UP));
+    }
+
+    /**
+     * Asserts that a string parses like BigDecimal rounded to the scale, and invalid strings as NaN.
+     */
+    private static void assertParse(final FixedDecimal<?> scale, final String string, final DecimalContext context) {
+        long expected;
+        try {
+            expected = expected(() -> new BigDecimal(string).setScale(scale.decimals(),
+                context.roundingMode().toRoundingMode()), 0, 0);
+        } catch (final NumberFormatException e) {
+            expected = FixedDecimal.NAN;
+        }
+        assertEquals(expected, scale.valueOf(string, context), () -> context.roundingMode() + " \"" + string +
+            "\" with " + scale.decimals() + " decimals");
+
+        // the same string as bytes in a buffer, between digits that are not part of it
+        final byte[] field = string.getBytes(StandardCharsets.ISO_8859_1);
+        final int offset = string.length() % 5;
+        final byte[] buffer = new byte[offset + field.length + string.length() % 11];
+        Arrays.fill(buffer, (byte) '7');
+        System.arraycopy(field, 0, buffer, offset, field.length);
+        final boolean ascii = string.chars().allMatch(c -> c < 0x80);
+        assertEquals(ascii ? expected : FixedDecimal.NAN, scale.valueOf(buffer, offset, field.length, context),
+            () -> context.roundingMode() + " bytes \"" + string + "\" with " + scale.decimals() + " decimals");
+    }
+
+    @Test
+    public void parsesBytes() {
+        final byte[] message = "44=101.25\u000138=300\u0001".getBytes(StandardCharsets.ISO_8859_1);
+        assertEquals(10_125_000_000L, PRICE.valueOf(message, 3, 6, HALF_UP));
+        assertEquals(30_000L, QTY.valueOf(message, 13, 3, HALF_UP));
+        assertEquals(10_100L, QTY.valueOf(message, 3, 4, HALF_UP)); // "101." of "101.25"
+        assertEquals(FixedDecimal.NAN, QTY.valueOf(message, 0, 0, HALF_UP));
+        assertThrows(IndexOutOfBoundsException.class, () -> QTY.valueOf(message, 16, 3, HALF_UP));
+        final String longString = "0".repeat(100) + "1.5";
+        assertEquals(150L, QTY.valueOf(longString, HALF_UP));
+        assertEquals(150L, QTY.valueOf(new StringBuilder(longString).substring(90), HALF_UP));
+    }
+
+    private static char randomDigit(final SplittableRandom random) {
+        // bias towards 0, 5 and 9 to hit ties, trailing zeros and carries
+        final int kind = random.nextInt(4);
+        return kind == 0 ? '0' : kind == 1 ? '5' : kind == 2 ? '9' : (char) ('0' + random.nextInt(10));
     }
 
     @Test

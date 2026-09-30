@@ -42,7 +42,7 @@ public final class MutableFixed64<S> implements Comparable<MutableFixed64<S>> {
         return new MutableFixed64<>(scale).setRaw(raw);
     }
 
-    public static <S> MutableFixed64<S> valueOf(final FixedDecimal<S> scale, final String value,
+    public static <S> MutableFixed64<S> valueOf(final FixedDecimal<S> scale, final CharSequence value,
                                                 final DecimalContext context) {
         return fromRaw(scale, scale.valueOf(value, context));
     }

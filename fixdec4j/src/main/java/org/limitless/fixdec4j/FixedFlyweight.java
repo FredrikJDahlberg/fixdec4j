@@ -2,6 +2,7 @@ package org.limitless.fixdec4j;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.nio.charset.StandardCharsets;
 
 /**
  * Fixed-scale decimal arithmetic on a long holding the value times 10^decimals, e.g. 123.45 with
@@ -23,6 +24,8 @@ final class FixedFlyweight {
     // negative magnitude signalling overflow, or an inexact result with UNNECESSARY
     private static final long OVERFLOW = -1;
     private static final long INT_MASK = 0xffffffffL;
+    // any digit can be appended to a smaller value without overflow, and at most 7 to this one
+    private static final long APPEND_LIMIT = Long.MAX_VALUE / 10;
 
     private static final long[] POWERS10 = {
         1L, 10L, 100L, 1_000L, 10_000L, 100_000L, 1_000_000L, 10_000_000L, 100_000_000L,
@@ -146,14 +149,160 @@ final class FixedFlyweight {
         return units.bitLength() < Long.SIZE ? units.longValue() : NAN;
     }
 
-    static long valueOf(final String value, final int decimals, final DecimalContext context) {
-        if ("NaN".equals(value)) {
+    /**
+     * Parses [+-]digits[.digits] without allocating, rounding the digits beyond the scale. Strings
+     * with an exponent or non-ASCII characters are parsed by BigDecimal, which accepts the same
+     * plain strings, so the result equals the BigDecimal value rounded to decimals, or NaN. The
+     * characters are read one at a time: copying them to bytes for SWAR costs more than it saves.
+     */
+    static long valueOf(final CharSequence value, final int decimals, final DecimalContext context) {
+        final int length = value.length();
+        int position = 0;
+        boolean negative = false;
+        if (length > 0 && (value.charAt(0) == '-' || value.charAt(0) == '+')) {
+            negative = value.charAt(0) == '-';
+            position = 1;
+        }
+        final Digits digits = new Digits(decimals);
+        while (position < length) {
+            final char c = value.charAt(position++);
+            if (!digits.accept(c)) {
+                return c == 'e' || c == 'E' || c >= 0x80 ? parseBigDecimal(value.toString(), decimals, context) : NAN;
+            }
+        }
+        return digits.value(negative, context);
+    }
+
+    /**
+     * Parses ASCII [+-]digits[.digits] like valueOf(CharSequence...), taking at most eight integer
+     * digits and the decimals up to the scale eight at a time.
+     */
+    static long valueOf(final byte[] bytes, final int offset, final int length, final int decimals,
+                        final DecimalContext context) {
+        final int end = offset + length;
+        int position = offset;
+        boolean negative = false;
+        if (length > 0 && (bytes[offset] == '-' || bytes[offset] == '+')) {
+            negative = bytes[offset] == '-';
+            ++position;
+        }
+        final long plain = parsePlain(bytes, position, end, decimals);
+        if (plain != NAN) {
+            return negative ? -plain : plain;
+        }
+        final Digits digits = new Digits(decimals);
+        while (position < end) {
+            final int c = bytes[position++] & 0xFF;
+            if (!digits.accept(c)) {
+                return c == 'e' || c == 'E' ?
+                    parseBigDecimal(new String(bytes, offset, length, StandardCharsets.ISO_8859_1), decimals, context) :
+                    NAN;
+            }
+        }
+        return digits.value(negative, context);
+    }
+
+    /**
+     * Parses at most eight integer digits, optionally followed by a point and at most the scale of
+     * decimals, with two independent eight byte loads.
+     * @return non-negative value, or NAN to use the general parser
+     */
+    private static long parsePlain(final byte[] bytes, final int position, final int end, final int decimals) {
+        final long integer = Swar.loadPadded(bytes, position);
+        final int integerDigits = Math.min(Swar.digitCount(integer), end - position);
+        final int point = position + integerDigits;
+        if (point == end) {
+            return integerDigits == 0 ? NAN : Swar.parseDigits(integer, integerDigits) * POWERS10[decimals];
+        }
+        if (bytes[point] != '.') {
             return NAN;
         }
+        final int fraction = point + 1;
+        final long word = Swar.loadPadded(bytes, fraction);
+        final int fractionDigits = Math.min(Swar.digitCount(word), end - fraction);
+        if (fraction + fractionDigits != end || fractionDigits > decimals || integerDigits + fractionDigits == 0) {
+            return NAN;
+        }
+        // below 10^17, the two products are independent
+        return Swar.parseDigits(integer, integerDigits) * POWERS10[decimals] +
+            Swar.parseDigits(word, fractionDigits) * POWERS10[decimals - fractionDigits];
+    }
+
+    private static long parseBigDecimal(final String value, final int decimals, final DecimalContext context) {
         try {
             return valueOf(new BigDecimal(value), decimals, context);
         } catch (final NumberFormatException e) {
             return NAN;
+        }
+    }
+
+    /**
+     * Accumulates the digits and point of a plain decimal, one character at a time. Allocated per
+     * parse and not escaping, so the JIT keeps its fields in registers.
+     */
+    private static final class Digits {
+        private final int decimals;
+        private long units;               // the digits up to the scale
+        private int fractionDigits = -1;  // -1 before the point
+        private boolean hasDigits;
+        private int dropped;              // first digit beyond the scale
+        private boolean sticky;           // whether any later digit is non-zero
+        private boolean overflow;
+
+        Digits(final int decimals) {
+            this.decimals = decimals;
+        }
+
+        /**
+         * Takes a digit or the point.
+         * @return false for any other character
+         */
+        boolean accept(final int c) {
+            final int digit = c - '0';
+            if (digit >= 0 && digit <= 9) {
+                hasDigits = true;
+                if (fractionDigits < decimals) {
+                    if (units >= APPEND_LIMIT && (units > APPEND_LIMIT || digit > Long.MAX_VALUE % 10)) {
+                        overflow = true; // NaN unless an exponent follows
+                    }
+                    units = units * 10 + digit;
+                    if (fractionDigits >= 0) {
+                        ++fractionDigits;
+                    }
+                } else {
+                    if (fractionDigits == decimals) {
+                        dropped = digit;
+                    } else {
+                        sticky |= digit != 0;
+                    }
+                    ++fractionDigits;
+                }
+                return true;
+            }
+            if (c == '.' && fractionDigits < 0) {
+                fractionDigits = 0;
+                return true;
+            }
+            return false;
+        }
+
+        /**
+         * Returns the value of the digits in the scale, rounded.
+         * @return value or NaN
+         */
+        long value(final boolean negative, final DecimalContext context) {
+            if (!hasDigits || overflow) {
+                return NAN;
+            }
+            final long magnitude;
+            if (fractionDigits < decimals) {
+                magnitude = scaleUp(0, units, decimals - Math.max(fractionDigits, 0));
+            } else {
+                // the dropped digits as a fraction of 20: 2 * dropped plus one when any later digit
+                // is non-zero, which is exactly half only for a dropped 5 followed by zeros
+                magnitude = round(units, 2L * dropped + (sticky ? 1 : 0), 20, negative, context.mode);
+            }
+            return magnitude < 0 ? NAN : negative ? -magnitude : magnitude;
         }
     }
 
@@ -174,7 +323,7 @@ final class FixedFlyweight {
     }
 
     static String toString(final long value, final int decimals) {
-        return value == NAN ? "NaN" : BigDecimal.valueOf(value, decimals).toPlainString();
+        return value == NAN ? "NaN" : Decimal64Flyweight.toString(value, decimals);
     }
 
     private static int numberOfBits(final long value) {

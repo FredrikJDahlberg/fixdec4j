@@ -7,6 +7,7 @@ import org.openjdk.jmh.runner.options.OptionsBuilder;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.nio.charset.StandardCharsets;
 import java.util.concurrent.TimeUnit;
 
 @State(Scope.Thread)
@@ -39,6 +40,10 @@ public class FixedDecimalBenchmark {
     MutableFixed64<Object> typedOperand;
     MutableFixed64<Object> result;
 
+    // value in the result scale as a string, e.g. "12345.6789", and as a FIX field "44=12345.6789<SOH>"
+    String string;
+    byte[] message;
+
     @Setup
     public void setup() {
         scale = FixedDecimal.of(operands.decimals());
@@ -51,6 +56,8 @@ public class FixedDecimalBenchmark {
         typedValue = MutableFixed64.fromRaw(scale, value);
         typedOperand = MutableFixed64.fromRaw(scale, operand);
         result = new MutableFixed64<>(scale);
+        string = scale.toString(value);
+        message = ("44=" + string + "\u0001").getBytes(StandardCharsets.ISO_8859_1);
 
         final BigDecimal big1 = operands.bigValue1();
         final BigDecimal big2 = operands.bigValue2();
@@ -62,6 +69,12 @@ public class FixedDecimalBenchmark {
         verify("multiplyMixed", big1.multiply(big2).setScale(decimals, RoundingMode.HALF_UP), multiplyMixed());
         verify("divideMixed", big1.divide(big2, decimals, RoundingMode.HALF_UP), divideMixed());
         verify("typedMultiply", big1.multiply(big2).setScale(decimals, RoundingMode.HALF_UP), typedMultiply().raw());
+        verify("parse", big1, parse());
+        verify("parseBytes", big1, parseBytes());
+        if (!big1.setScale(decimals).toPlainString().equals(format())) {
+            throw new IllegalStateException(operands + " format: expected " + big1.toPlainString() + " but was " +
+                format());
+        }
     }
 
     private void verify(final String operation, final BigDecimal expected, final long actual) {
@@ -116,6 +129,21 @@ public class FixedDecimalBenchmark {
     @Benchmark
     public MutableFixed64<Object> typedMultiply() {
         return result.multiply(typedValue, typedOperand, context);
+    }
+
+    @Benchmark
+    public long parse() {
+        return scale.valueOf(string, context);
+    }
+
+    @Benchmark
+    public long parseBytes() {
+        return scale.valueOf(message, 3, message.length - 4, context);
+    }
+
+    @Benchmark
+    public String format() {
+        return scale.toString(value);
     }
 
     public static void main(String[] args) throws RunnerException {

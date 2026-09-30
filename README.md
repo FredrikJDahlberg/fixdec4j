@@ -30,7 +30,7 @@ Build the project with [Gradle](http://gradle.org/) using this [build.gradle](ht
 
 You require the following to build fixdec4j
 
-* The Latest release of Java 8. fsmp4j is tested with Java 8.
+* Java 21 or later (the build uses a Java 21 toolchain). fixdec4j is tested with Java 21.
 
 Full clean and build:
 

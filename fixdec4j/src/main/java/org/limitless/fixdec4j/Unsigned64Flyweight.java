@@ -46,50 +46,22 @@ public final class Unsigned64Flyweight {
 
     /**
      * Returns the unsigned quotient of its arguments.
-     * (The Long.divideUnsigned is too slow, beacuase it uses BigInteger)
      * @param unsignedDividend 64-bit unsigned long
      * @param unsignedDivisor  64-bit unsigned long
      * @return 64-bit unsigned quotient
      */
     public static long divide(final long unsignedDividend, final long unsignedDivisor) {
-        if (unsignedDivisor < 0) {
-            if (compare(unsignedDividend, unsignedDivisor) < 0) {
-                return 0;
-            } else {
-                return 1;
-            }
-        }
-        if (unsignedDividend >= 0) {
-            return unsignedDividend / unsignedDivisor;
-        }
-
-        final long quotient = ((unsignedDividend >>> 1) / unsignedDivisor) << 1;
-        final long remainder = unsignedDividend - quotient * unsignedDivisor;
-        return quotient + (compare(remainder, unsignedDivisor) >= 0 ? 1 : 0);
+        return Long.divideUnsigned(unsignedDividend, unsignedDivisor);
     }
 
     /**
      * Returns the unsigned remainder of its arguments.
-     * (The Long.remainderUnsigned is too slow, becuase it uses BigInteger)
      * @param unsignedDividend 64-bit unsigned long
      * @param unsignedDivisor  64-bit unsigned long
      * @return 64-bit unsigned remainder
      */
-    public static long remainder(long unsignedDividend, long unsignedDivisor) {
-        if (unsignedDivisor < 0) {
-            if (compare(unsignedDividend, unsignedDivisor) < 0) {
-                return unsignedDividend;
-            } else {
-                return unsignedDividend - unsignedDivisor;
-            }
-        }
-        if (unsignedDividend >= 0) {
-            return unsignedDividend % unsignedDivisor;
-        }
-
-        final long quotient = ((unsignedDividend >>> 1) / unsignedDivisor) << 1;
-        final long remainder = unsignedDividend - quotient * unsignedDivisor;
-        return remainder - (compare(remainder, unsignedDivisor) >= 0 ? unsignedDivisor : 0);
+    public static long remainder(final long unsignedDividend, final long unsignedDivisor) {
+        return Long.remainderUnsigned(unsignedDividend, unsignedDivisor);
     }
 
     /**
@@ -99,8 +71,6 @@ public final class Unsigned64Flyweight {
      * @return 1 = value1 > value2, 0 = value1 == value2, -1 = value1 < value2
      */
     public static int compare(final long unsignedValue1, final long unsignedValue2) {
-        final long flipped1 = unsignedValue1 ^ Long.MIN_VALUE;
-        final long flipped2 = unsignedValue2 ^ Long.MIN_VALUE;
-        return Long.compare(flipped1, flipped2);
+        return Long.compareUnsigned(unsignedValue1, unsignedValue2);
     }
 }

@@ -384,34 +384,10 @@ public final class MutableUnsigned128 implements Comparable<MutableUnsigned128> 
      * @param value1 64-bit unsigned factor
      * @param value2 64-bit unsigned factor
      * @param result 128-bit unsigned product
-     *                 From <a href="https://www.codeproject.com/Tips/618570/UInt-Multiplication-Squaring"
-     *                 >www.codeproject.com</a>
      */
     private static void multiply(final long value1, final long value2, final MutableUnsigned128 result) {
-        int powerFactor1 = Long.SIZE - Long.numberOfLeadingZeros(value1);
-        int powerFactor2 = Long.SIZE - Long.numberOfLeadingZeros(value2);
-        if (powerFactor1 + powerFactor2 < Long.SIZE) {
-            result.highBits = 0;
-            result.lowBits = value1 * value2;
-        } else {
-            long factor1 = value1;
-            long factor2 = value2;
-            final long u1 = factor1 & INT_BITS;
-            final long v1 = factor2 & INT_BITS;
-            long t = u1 * v1;
-            long w3 = t & INT_BITS;
-            long k = t >>> Integer.SIZE;
-            factor1 >>>= Integer.SIZE;
-            t = (factor1 * v1) + k;
-            k = t & INT_BITS;
-
-            final long w1 = t >>> Integer.SIZE;
-            factor2 >>>= Integer.SIZE;
-            t = (u1 * factor2) + k;
-            k = t >>> Integer.SIZE;
-            result.highBits = (factor1 * factor2) + w1 + k;
-            result.lowBits = (t << Integer.SIZE) + w3;
-        }
+        result.highBits = Math.unsignedMultiplyHigh(value1, value2);
+        result.lowBits = value1 * value2;
     }
 
     public MutableUnsigned128 divide(final long divisor, final MutableUnsigned128.Context context) {
@@ -486,7 +462,8 @@ public final class MutableUnsigned128 implements Comparable<MutableUnsigned128> 
     }
 
     /**
-     * Iterative division of 128-bit dividend by 64-bit divisor.
+     * Iterative division of 128-bit dividend by 64-bit divisor. The quotient must fit in 64 bits,
+     * i.e. dividendHigh is below the divisor (unsigned).
      * @param dividendHigh 64 higher bits
      * @param dividendLow  64 lower bits
      * @param divisor      64-bit
@@ -495,7 +472,7 @@ public final class MutableUnsigned128 implements Comparable<MutableUnsigned128> 
      * From <a href="http://www.codeproject.com/Tips/785014/UInt-Division-Modulus"
      * >www.codeproject.com</a>
      */
-    private static long divide(final long dividendHigh,
+    static long divide(final long dividendHigh,
                                final long dividendLow,
                                final long divisor,
                                final MutableUnsigned128 result) {
@@ -516,7 +493,7 @@ public final class MutableUnsigned128 implements Comparable<MutableUnsigned128> 
         final long un1 = un10 >>> Integer.SIZE;
         final long un0 = un10 & INT_BITS;
         long q1 = Unsigned64Flyweight.divide(un32, vn1);
-        long rhat = Unsigned64Flyweight.remainder(un32, vn1);
+        long rhat = un32 - q1 * vn1; // below vn1, so exact modulo 2^64
         long left = q1 * vn0;
         long right = (rhat << Integer.SIZE) + un1;
         while (Unsigned64Flyweight.compare(q1, LIMIT) >= 0 || Unsigned64Flyweight.compare(left, right) >= 1) {
@@ -532,7 +509,7 @@ public final class MutableUnsigned128 implements Comparable<MutableUnsigned128> 
 
         final long un21 = (un32 << Integer.SIZE) + (un1 - (q1 * v));
         long q0 = Unsigned64Flyweight.divide(un21, vn1);
-        rhat = Unsigned64Flyweight.remainder(un21, vn1);
+        rhat = un21 - q0 * vn1;
         left = q0 * vn0;
         right = (rhat << Integer.SIZE) | un0;
         while (Unsigned64Flyweight.compare(q0, LIMIT) >= 0 || Unsigned64Flyweight.compare(left, right) >= 1) {

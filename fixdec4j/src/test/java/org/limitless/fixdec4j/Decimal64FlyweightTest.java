@@ -89,6 +89,35 @@ public class Decimal64FlyweightTest {
     }
 
     @Test
+    public void compareValues() {
+        // equal bit lengths
+        assertEquals(-1, Decimal64Flyweight.compareTo(Decimal64Flyweight.valueOf(5, 0), Decimal64Flyweight.valueOf(6, 0)));
+        assertEquals(1, Decimal64Flyweight.compareTo(Decimal64Flyweight.valueOf(6, 0), Decimal64Flyweight.valueOf(5, 0)));
+        assertEquals(-1, Decimal64Flyweight.compareTo(Decimal64Flyweight.valueOf(5, -1), Decimal64Flyweight.valueOf(6, -1)));
+        // different decimals
+        assertEquals(1, Decimal64Flyweight.compareTo(Decimal64Flyweight.valueOf(15, -1), Decimal64Flyweight.valueOf(120, -2)));
+        assertEquals(-1, Decimal64Flyweight.compareTo(Decimal64Flyweight.valueOf(-15, -1), Decimal64Flyweight.valueOf(-120, -2)));
+        assertEquals(0, Decimal64Flyweight.compareTo(Decimal64Flyweight.valueOf(12, -1), Decimal64Flyweight.valueOf(120, -2)));
+        // scaling overflows, the magnitude decides
+        assertEquals(1, Decimal64Flyweight.compareTo(
+            Decimal64Flyweight.valueOf(Decimal64Flyweight.MANTISSA_MAX, 0), Decimal64Flyweight.valueOf(Decimal64Flyweight.MANTISSA_MAX, -7)));
+        assertEquals(-1, Decimal64Flyweight.compareTo(
+            Decimal64Flyweight.valueOf(-Decimal64Flyweight.MANTISSA_MAX + 1, 0), Decimal64Flyweight.valueOf(-1, -7)));
+    }
+
+    @Test
+    public void addOverflow() {
+        // 2^59 + 0.0000001 needs a mantissa of about 5.8e24
+        assertEquals(Decimal64Flyweight.NAN, Decimal64Flyweight.add(
+            Decimal64Flyweight.valueOf(1L << 59, 0), Decimal64Flyweight.valueOf(1, -7)));
+        assertEquals(Decimal64Flyweight.NAN, Decimal64Flyweight.subtract(
+            Decimal64Flyweight.valueOf(1, -7), Decimal64Flyweight.valueOf(1L << 59, 0)));
+        final long sum = Decimal64Flyweight.add(Decimal64Flyweight.valueOf(115292150460L, 0), Decimal64Flyweight.valueOf(1, -7));
+        assertEquals(1152921504600000001L, Decimal64Flyweight.mantissa(sum));
+        assertEquals(-7, Decimal64Flyweight.exponent(sum));
+    }
+
+    @Test
     public void divideRoundsHalfUp() {
         // odd divisors, the remainder decides the rounding
         assertDivide(18180000, -4, 7, -4, 25971428571L, -4);   // 1818 / 0.0007 = 2597142.857142...
@@ -119,6 +148,9 @@ public class Decimal64FlyweightTest {
             Decimal64Flyweight.valueOf(236600569113721057L, -2), Decimal64Flyweight.valueOf(133233076, -6), context));
         assertEquals(Decimal64Flyweight.NAN, Decimal64Flyweight.multiply(
             Decimal64Flyweight.valueOf(5052, 0), Decimal64Flyweight.valueOf(3580537735801959L, -1), context));
+        // 922337203685478 * 92233720368.5477578, the scaled product exceeds 128 bits
+        assertEquals(Decimal64Flyweight.NAN, Decimal64Flyweight.multiply(
+            Decimal64Flyweight.valueOf(922337203685478L, 0), Decimal64Flyweight.valueOf(922337203685477578L, -7), context));
     }
 
     private void assertDivide(long dividend, int dividendExponent, long divisor, int divisorExponent,

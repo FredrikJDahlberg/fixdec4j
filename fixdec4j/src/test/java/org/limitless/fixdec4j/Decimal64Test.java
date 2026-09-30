@@ -380,7 +380,7 @@ public class Decimal64Test {
 
 		assertEquals(-1, Decimal64Flyweight.compareTo(of(1, 2), of(1, 3)));
 		assertEquals(1, Decimal64Flyweight.compareTo(of(123_000, -3), of(1, 2)));
-		assertEquals(1, Decimal64Flyweight.compareTo(of(1, 2), of(123_000, -3)));
+		assertEquals(-1, Decimal64Flyweight.compareTo(of(1, 2), of(123_000, -3)));
 		assertEquals(0, Decimal64Flyweight.compareTo(of(123, 0), of(123_000, -3)));
 	}
 

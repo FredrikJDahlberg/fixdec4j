@@ -29,6 +29,8 @@ public record FixedDecimal<S>(int decimals) {
     public static final long NAN = FixedFlyweight.NAN;
     public static final long MAX_VALUE = Long.MAX_VALUE;
     public static final long MIN_VALUE = -Long.MAX_VALUE;
+    /** NaN of a value stored in 32 bits, see toInt. */
+    public static final int INT_NAN = FixedFlyweight.INT_NAN;
 
     public FixedDecimal {
         if (decimals < 0 || decimals > DECIMALS_MAX) {
@@ -48,6 +50,36 @@ public record FixedDecimal<S>(int decimals) {
 
     public static boolean isNaN(final long value) {
         return value == NAN;
+    }
+
+    /**
+     * Returns whether a value stored in 32 bits is NaN.
+     * @param value value stored in 32 bits
+     * @return true when NaN
+     */
+    public static boolean isNaN(final int value) {
+        return value == INT_NAN;
+    }
+
+    /**
+     * Narrows a value to 32 bits for compact storage, e.g. in an int[] or a message with 4-byte
+     * prices. The number of decimals is unchanged, so the int holds the same raw value, from
+     * -Integer.MAX_VALUE to Integer.MAX_VALUE units, e.g. -21474836.47 to 21474836.47 with
+     * 2 decimals. Calculate with the 64-bit value and narrow the result.
+     * @param value value
+     * @return value in 32 bits, or INT_NAN when NaN or out of range
+     */
+    public static int toInt(final long value) {
+        return FixedFlyweight.toInt(value);
+    }
+
+    /**
+     * Widens a value stored in 32 bits by toInt, mapping INT_NAN to NAN.
+     * @param value value stored in 32 bits
+     * @return value
+     */
+    public static long fromInt(final int value) {
+        return FixedFlyweight.fromInt(value);
     }
 
     /**

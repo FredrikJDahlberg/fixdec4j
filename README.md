@@ -1,8 +1,6 @@
 Fixed Decimal Arithmetic
 ========================
 
-_Experimental_
-
 Implemented data types:
 
 * Decimal 64 bits, where each value stores its number of decimals (0 - 7): immutable `Decimal64`, mutable `MutableDecimal64` and flyweight `Decimal64Flyweight`
@@ -58,6 +56,8 @@ notional.multiply(price, quantity, context);  // 30375.00, kinds combined explic
 ```
 
 `add`, `subtract`, `set` and `compareTo` require the same kind, while `multiply`, `divide` and `convert` combine any kinds and write the result in the scale of the instance. The operations update the instance and do not allocate. The type parameter is erased at runtime, so raw types and unchecked casts bypass the check; with assertions enabled, same-kind operations also check the number of decimals. `raw()` and `fromRaw(scale, raw)` convert to and from the raw `long`, e.g. to store values in arrays or messages.
+
+To halve the memory of large arrays or to read 4-byte prices from messages, `FixedDecimal.toInt(long)` narrows a value to an `int` in the same scale, and `FixedDecimal.fromInt(int)` widens it again. An `int` holds -2,147,483,647 to 2,147,483,647 units, e.g. ±21,474,836.47 with 2 decimals. `Integer.MIN_VALUE` (`FixedDecimal.INT_NAN`) is NaN, and a value out of range narrows to NaN. Calculate with the 64-bit values and narrow the results, since products rarely fit in 32 bits.
 
 Fixed-scale values convert to and from strings and `BigDecimal` with `valueOf(String, DecimalContext)`, `valueOf(BigDecimal, DecimalContext)`, `toString(long)` and `toBigDecimal(long)`, which currently go through `BigDecimal` and allocate.
 

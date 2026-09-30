@@ -177,6 +177,35 @@ public class FixedDecimalTest {
         assertFalse(FixedDecimal.isNaN(0));
     }
 
+    @Test
+    public void narrowsAndWidens() {
+        assertEquals(Integer.MAX_VALUE, FixedDecimal.toInt(Integer.MAX_VALUE));
+        assertEquals(-Integer.MAX_VALUE, FixedDecimal.toInt(-Integer.MAX_VALUE));
+        assertEquals(0, FixedDecimal.toInt(0));
+        // Integer.MIN_VALUE is reserved for NaN
+        assertEquals(FixedDecimal.INT_NAN, FixedDecimal.toInt(Integer.MIN_VALUE));
+        assertEquals(FixedDecimal.INT_NAN, FixedDecimal.toInt(Integer.MAX_VALUE + 1L));
+        assertEquals(FixedDecimal.INT_NAN, FixedDecimal.toInt(Long.MAX_VALUE));
+        assertEquals(FixedDecimal.INT_NAN, FixedDecimal.toInt(FixedDecimal.NAN));
+        assertEquals(FixedDecimal.NAN, FixedDecimal.fromInt(FixedDecimal.INT_NAN));
+        assertTrue(FixedDecimal.isNaN(FixedDecimal.INT_NAN));
+        assertFalse(FixedDecimal.isNaN(0));
+
+        final SplittableRandom random = new SplittableRandom(55);
+        for (int i = 0; i < 100_000; i++) {
+            final int stored = random.nextInt(-Integer.MAX_VALUE, Integer.MAX_VALUE) + random.nextInt(2);
+            assertEquals(stored, FixedDecimal.toInt(FixedDecimal.fromInt(stored)));
+            assertEquals(stored, FixedDecimal.fromInt(stored));
+        }
+
+        // calculate in 64 bits, store in 32 bits
+        final FixedDecimal<Price> price4 = FixedDecimal.of(4);
+        final int[] prices = {FixedDecimal.toInt(price4.valueOf("101.25", HALF_UP)),
+            FixedDecimal.toInt(price4.valueOf("99.5", HALF_UP))};
+        final long sum = price4.add(FixedDecimal.fromInt(prices[0]), FixedDecimal.fromInt(prices[1]));
+        assertEquals("200.7500", price4.toString(sum));
+    }
+
     /**
      * Returns a random value of random magnitude and sign, and sometimes NaN or zero.
      */

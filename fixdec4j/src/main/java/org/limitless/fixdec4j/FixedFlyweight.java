@@ -17,6 +17,7 @@ import java.math.BigInteger;
  */
 final class FixedFlyweight {
     static final long NAN = Long.MIN_VALUE;
+    static final int INT_NAN = Integer.MIN_VALUE;
     static final int DECIMALS_MAX = 9;
 
     // negative magnitude signalling overflow, or an inexact result with UNNECESSARY
@@ -154,6 +155,15 @@ final class FixedFlyweight {
         } catch (final NumberFormatException e) {
             return NAN;
         }
+    }
+
+    static int toInt(final long value) {
+        // NaN, Long.MIN_VALUE, is also out of range
+        return value >= -Integer.MAX_VALUE && value <= Integer.MAX_VALUE ? (int) value : INT_NAN;
+    }
+
+    static long fromInt(final int value) {
+        return value == INT_NAN ? NAN : value;
     }
 
     static BigDecimal toBigDecimal(final long value, final int decimals) {

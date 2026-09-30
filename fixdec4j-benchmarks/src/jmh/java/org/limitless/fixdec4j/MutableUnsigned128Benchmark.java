@@ -25,7 +25,7 @@ public class MutableUnsigned128Benchmark {
     MutableUnsigned128 value;
     MutableUnsigned128 operand = new MutableUnsigned128(IntegerOperands.OPERAND);
     MutableUnsigned128 result = new MutableUnsigned128();
-    MutableUnsigned128.Context context = new MutableUnsigned128.Context(DecimalRounding.UP);
+    MutableUnsigned128.Context context = new MutableUnsigned128.Context();
 
     @Setup
     public void setup() {

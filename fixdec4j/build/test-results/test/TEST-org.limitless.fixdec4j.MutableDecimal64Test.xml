@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="org.limitless.fixdec4j.MutableDecimal64Test" tests="6" skipped="0" failures="0" errors="0" timestamp="2026-09-30T18:23:02.103Z" hostname="MacBook-Pro" time="0.002">
+  <properties/>
+  <testcase name="divide128()" classname="org.limitless.fixdec4j.MutableDecimal64Test" time="0.001"/>
+  <testcase name="basics()" classname="org.limitless.fixdec4j.MutableDecimal64Test" time="0.0"/>
+  <testcase name="divide64()" classname="org.limitless.fixdec4j.MutableDecimal64Test" time="0.0"/>
+  <testcase name="multiply128()" classname="org.limitless.fixdec4j.MutableDecimal64Test" time="0.0"/>
+  <testcase name="toStrings()" classname="org.limitless.fixdec4j.MutableDecimal64Test" time="0.001"/>
+  <testcase name="multiply64()" classname="org.limitless.fixdec4j.MutableDecimal64Test" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

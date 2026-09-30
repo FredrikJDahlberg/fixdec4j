@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="org.limitless.fixdec4j.FixedDecimalTest" tests="10" skipped="0" failures="0" errors="0" timestamp="2026-09-30T18:23:01.354Z" hostname="MacBook-Pro" time="0.749">
+  <properties/>
+  <testcase name="sameScaleOperations()" classname="org.limitless.fixdec4j.FixedDecimalTest" time="0.012"/>
+  <testcase name="strings()" classname="org.limitless.fixdec4j.FixedDecimalTest" time="0.001"/>
+  <testcase name="example()" classname="org.limitless.fixdec4j.FixedDecimalTest" time="0.0"/>
+  <testcase name="divideMatchesBigDecimal()" classname="org.limitless.fixdec4j.FixedDecimalTest" time="0.244"/>
+  <testcase name="multiplyMatchesBigDecimal()" classname="org.limitless.fixdec4j.FixedDecimalTest" time="0.211"/>
+  <testcase name="typedValues()" classname="org.limitless.fixdec4j.FixedDecimalTest" time="0.0"/>
+  <testcase name="addAndSubtractOverflowIsNaN()" classname="org.limitless.fixdec4j.FixedDecimalTest" time="0.0"/>
+  <testcase name="addAndSubtractMatchBigInteger()" classname="org.limitless.fixdec4j.FixedDecimalTest" time="0.036"/>
+  <testcase name="convertMatchesBigDecimal()" classname="org.limitless.fixdec4j.FixedDecimalTest" time="0.242"/>
+  <testcase name="rejectsInvalidDecimals()" classname="org.limitless.fixdec4j.FixedDecimalTest" time="0.001"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

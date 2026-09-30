@@ -20,7 +20,7 @@ public class Decimal64FlyweightBenchmark {
 
     long value;
     long decimal;
-    Decimal64.Context context = new Decimal64.Context(DecimalRounding.UP);
+    DecimalContext context = new DecimalContext(DecimalRounding.HALF_UP);
 
     @Setup
     public void setup() {

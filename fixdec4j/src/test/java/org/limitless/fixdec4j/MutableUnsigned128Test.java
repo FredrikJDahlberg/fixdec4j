@@ -41,7 +41,7 @@ public class MutableUnsigned128Test {
         final MutableUnsigned128 product = new MutableUnsigned128(value1).multiply(value2);
         assertEquals(0, result.compareTo(product), "Failed, result=" + product + " expected=" + result);
 
-        final MutableUnsigned128.Context context = new MutableUnsigned128.Context(DecimalRounding.UP);
+        final MutableUnsigned128.Context context = new MutableUnsigned128.Context();
         final MutableUnsigned128 quotient1 = new MutableUnsigned128(product).divide(value1, context);
         assertEquals(0, value2.compareTo(quotient1), "Failed, quotient1=" + quotient1 + " expected=" + value2);
 
@@ -55,7 +55,7 @@ public class MutableUnsigned128Test {
             result.highBits(), result.lowBits());
         final MutableUnsigned128 quotient = new MutableUnsigned128(value1);
         final MutableUnsigned128 remainder = new MutableUnsigned128();
-        final MutableUnsigned128.Context context = new MutableUnsigned128.Context(DecimalRounding.UP);
+        final MutableUnsigned128.Context context = new MutableUnsigned128.Context();
         quotient.divide(value2, remainder, context);
         assertEquals(0, result.compareTo(quotient), "Failed, result=" + quotient + " expected=" + result);
 
@@ -86,7 +86,7 @@ public class MutableUnsigned128Test {
 
         divide(of(0x0_00000800, 0x0_0L), of(0x0_00000008L, 0x0_0L), of(0, 0x0_00000100));
 
-        MutableUnsigned128.Context context = new MutableUnsigned128.Context(DecimalRounding.UP);
+        MutableUnsigned128.Context context = new MutableUnsigned128.Context();
         assertEquals(of(0, 200), of(0, 3000).divide(15, context));
         assertEquals(of(0, 3000), of(0, 200).multiply(15, context));
 // of(0, 1).divide(null); -> null pointer
@@ -96,7 +96,7 @@ public class MutableUnsigned128Test {
 
     @Test
     public void checkMultiplication() {
-        final MutableUnsigned128.Context context = new MutableUnsigned128.Context(DecimalRounding.UP);
+        final MutableUnsigned128.Context context = new MutableUnsigned128.Context();
         final MutableUnsigned128 value = new MutableUnsigned128(0x10000000_00000000L)
             .multiply(0x10000000_00000000L, context);
         System.out.println(value);
@@ -132,7 +132,7 @@ public class MutableUnsigned128Test {
         add(of(100, 200), of(50, 50), of(150, 250));
         add(of(0x0_0L, 0x80000000_00000000L), of(0x0_0L, 0x80000000_00000000L), of(0x0_1L, 0x0_0L));
 
-        final MutableUnsigned128.Context context = new MutableUnsigned128.Context(DecimalRounding.UP);
+        final MutableUnsigned128.Context context = new MutableUnsigned128.Context();
         assertEquals(of(0, 350), of(0, 100).add(250, context));
         assertEquals(of(100, 350), of(100, 100).add(250, context));
     }

@@ -1,5 +1,7 @@
 package org.limitless.fixdec4j;
 
+import java.math.BigDecimal;
+
 /**
  * This class implements a mutable fixed decimal number, see the DecimalFlyweight class for details.
  * @author fredrikdahlberg
@@ -80,6 +82,19 @@ public final class MutableDecimal64 implements Comparable<MutableDecimal64> {
     public static MutableDecimal64 valueOf(final double value, final int decimals) {
         final MutableDecimal64 fixed = new MutableDecimal64();
         fixed.fixedDecimal = Decimal64Flyweight.valueOf(value, decimals);
+        return fixed;
+    }
+
+    /**
+     * Constructs a mutable decimal value from a BigDecimal, rounded to at most
+     * Decimal64Flyweight.DECIMALS_MAX decimals according to the rounding mode.
+     * @param value   BigDecimal
+     * @param context rounding mode
+     * @return new mutable decimal instance, NAN indicating overflow or an inexact result with UNNECESSARY
+     */
+    public static MutableDecimal64 valueOf(final BigDecimal value, final DecimalContext context) {
+        final MutableDecimal64 fixed = new MutableDecimal64();
+        fixed.fixedDecimal = Decimal64Flyweight.valueOf(value, context);
         return fixed;
     }
 
@@ -194,34 +209,23 @@ public final class MutableDecimal64 implements Comparable<MutableDecimal64> {
     }
 
     /**
-     * Returns the product of this instance and its argument rounding away from zero.
+     * Returns the product of this instance and its argument, rounded according to the rounding mode of the context.
      * @param value factor
      * @param context helper
      * @return this instance with the product or NAN indicating overflow.
      */
-    public MutableDecimal64 multiply(final MutableDecimal64 value, final MutableDecimal64.Context context) {
+    public MutableDecimal64 multiply(final MutableDecimal64 value, final DecimalContext context) {
         fixedDecimal = Decimal64Flyweight.multiply(fixedDecimal, value.fixedDecimal, context);
         return this;
     }
 
     /**
-     * Returns the product of this instance and its argument rounding away from zero.
-     * @param value factor
-     * @param context helper
-     * @return this instance with the product or NAN indicating overflow.
-     */
-    public MutableDecimal64 multiply(final MutableDecimal64 value, final Decimal64.Context context) {
-        fixedDecimal = Decimal64Flyweight.multiply(fixedDecimal, value.fixedDecimal, context);
-        return this;
-    }
-
-    /**
-     * Returns the quotient of this instance and its argument rounding away from zero.
+     * Returns the quotient of this instance and its argument, rounded according to the rounding mode of the context.
      * @param value divisor
      * @param context helper
      * @return this instance with the quotient or NAN indicating overflow.
      */
-    public MutableDecimal64 divide(final MutableDecimal64 value, final MutableDecimal64.Context context) {
+    public MutableDecimal64 divide(final MutableDecimal64 value, final DecimalContext context) {
         fixedDecimal = Decimal64Flyweight.divide(fixedDecimal, value.fixedDecimal, context);
         return this;
     }
@@ -232,7 +236,7 @@ public final class MutableDecimal64 implements Comparable<MutableDecimal64> {
      * @param context helper
      * @return this instance rounded according to the rounding mode
      */
-    public MutableDecimal64 round(final int decimals, final MutableDecimal64.Context context) {
+    public MutableDecimal64 round(final int decimals, final DecimalContext context) {
         fixedDecimal = Decimal64Flyweight.round(fixedDecimal, decimals, context);
         return this;
     }
@@ -251,7 +255,7 @@ public final class MutableDecimal64 implements Comparable<MutableDecimal64> {
      * @param context helper
      * @return byte value
      */
-    public byte byteValue(MutableDecimal64.Context context) {
+    public byte byteValue(DecimalContext context) {
         return Decimal64Flyweight.byteValue(fixedDecimal, context);
     }
 
@@ -260,7 +264,7 @@ public final class MutableDecimal64 implements Comparable<MutableDecimal64> {
      * @param context helper
      * @return short value
      */
-    public short shortValue(final MutableDecimal64.Context context) {
+    public short shortValue(final DecimalContext context) {
         return Decimal64Flyweight.shortValue(fixedDecimal, context);
     }
 
@@ -269,7 +273,7 @@ public final class MutableDecimal64 implements Comparable<MutableDecimal64> {
      * @param context helper
      * @return integer value
      */
-    public int intValue(final MutableDecimal64.Context context) {
+    public int intValue(final DecimalContext context) {
         return Decimal64Flyweight.intValue(fixedDecimal, context);
     }
 
@@ -278,7 +282,7 @@ public final class MutableDecimal64 implements Comparable<MutableDecimal64> {
      * @param context helper
      * @return long value
      */
-    public long longValue(final MutableDecimal64.Context context) {
+    public long longValue(final DecimalContext context) {
         return Decimal64Flyweight.longValue(fixedDecimal, context);
     }
 
@@ -299,6 +303,15 @@ public final class MutableDecimal64 implements Comparable<MutableDecimal64> {
     }
 
     /**
+     * Returns the exact value as a BigDecimal with the same number of decimals.
+     * @return BigDecimal value
+     * @throws ArithmeticException if the value is NaN, which BigDecimal cannot represent
+     */
+    public BigDecimal toBigDecimal() {
+        return Decimal64Flyweight.toBigDecimal(fixedDecimal);
+    }
+
+    /**
      * Returns the decimal fly-weight representation of this instance.
      * @return decimal fly-weight value
      */
@@ -314,13 +327,5 @@ public final class MutableDecimal64 implements Comparable<MutableDecimal64> {
     public MutableDecimal64 fromLongBits(final long value) {
         fixedDecimal = value;
         return this;
-    }
-
-    public static final class Context extends Decimal64.Context {
-
-       public Context(DecimalRounding mode) {
-           super(mode);
-       }
-
     }
 }

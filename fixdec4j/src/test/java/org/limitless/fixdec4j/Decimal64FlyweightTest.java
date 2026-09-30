@@ -7,7 +7,7 @@ import static org.junit.jupiter.api.Assertions.assertNotEquals;
 
 public class Decimal64FlyweightTest {
 
-    Decimal64.Context context = new Decimal64.Context(DecimalRounding.UP);
+    DecimalContext context = new DecimalContext(DecimalRounding.HALF_UP);
 
     @Test
     public void toStrings() {
@@ -132,7 +132,7 @@ public class Decimal64FlyweightTest {
 
     @Test
     public void divideRoundsDown() {
-        final Decimal64.Context down = new Decimal64.Context(DecimalRounding.DOWN);
+        final DecimalContext down = new DecimalContext(DecimalRounding.DOWN);
         final long result = Decimal64Flyweight.divide(Decimal64Flyweight.valueOf(2, 0), Decimal64Flyweight.valueOf(3, 0), down);
         assertEquals(0, Decimal64Flyweight.mantissa(result));
         final long tie = Decimal64Flyweight.divide(Decimal64Flyweight.valueOf(-3, -2), Decimal64Flyweight.valueOf(2, 0), down);

@@ -23,7 +23,7 @@ public class MutableDecimal64Benchmark {
     long value;
     MutableDecimal64 decimal;
     MutableDecimal64 result = new MutableDecimal64();
-    MutableDecimal64.Context context = new MutableDecimal64.Context(DecimalRounding.UP);
+    DecimalContext context = new DecimalContext(DecimalRounding.HALF_UP);
 
     @Setup
     public void setup() {

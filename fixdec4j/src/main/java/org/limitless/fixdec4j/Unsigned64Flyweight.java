@@ -1,10 +1,12 @@
 package org.limitless.fixdec4j;
 
 /**
- * This class implements unsigned 64-bit arithmetic.
+ * This class implements unsigned 64-bit arithmetic. It is an internal building block for the
+ * decimal types and not part of the public API; use Long.divideUnsigned, Long.remainderUnsigned
+ * and Long.compareUnsigned for unsigned arithmetic.
  * @author fredrikdahlberg
  */
-public final class Unsigned64Flyweight {
+final class Unsigned64Flyweight {
     /**
      * Returns the number of bits in the number, e.g. ln(value)/ln(2).
      * @param unsignedValue unsigned long

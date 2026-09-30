@@ -1,5 +1,7 @@
 package org.limitless.fixdec4j;
 
+import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
 
 /**
@@ -14,7 +16,7 @@ import java.nio.charset.StandardCharsets;
  * largest precision of its operands. Note that only the number of decimals is
  * stored, e.g. 100e0 and 1e2 are normalized to 100e0.
  * <p>
- * The supported decimal rounding modes are Up and Down, see RoundingMode.
+ * The supported rounding modes match java.math.RoundingMode, see DecimalRounding.
  * <p>
  * The arithmetic operations will not overflow unless the result cannot be
  * represented within the limits above (intermediate values use 128-bit
@@ -146,6 +148,41 @@ public final class Decimal64Flyweight {
         }
         final long mantissa = Math.round(Math.abs(value) * Powers10[decimals]);
         return encode(value < 0 ? -mantissa : mantissa, -decimals);
+    }
+
+    /**
+     * Constructs a decimal flyweight from a BigDecimal. The number of decimals is kept, but a value
+     * with more than DECIMALS_MAX decimals is rounded to DECIMALS_MAX according to the rounding mode.
+     * @param value   BigDecimal value
+     * @param context rounding mode
+     * @return decimal flyweight, or NAN indicating overflow or an inexact result with UNNECESSARY
+     */
+    public static long valueOf(final BigDecimal value, final DecimalContext context) {
+        BigDecimal decimal = value;
+        if (decimal.scale() > DECIMALS_MAX) {
+            if (decimal.precision() - decimal.scale() < -DECIMALS_MAX) {
+                // below 10^-8 in magnitude, which rounds like 1E-9 with the same sign in every mode,
+                // but avoids scaling a huge scale such as 1E-1000000
+                decimal = BigDecimal.valueOf(decimal.signum(), DECIMALS_MAX + 2);
+            }
+            if (context.mode == DecimalRounding.UNNECESSARY &&
+                decimal.stripTrailingZeros().scale() > DECIMALS_MAX) {
+                return NAN;
+            }
+            decimal = decimal.setScale(DECIMALS_MAX, context.mode.toRoundingMode());
+        } else if (decimal.scale() < 0) {
+            // at least 20 integer digits is at least 10^19, above MANTISSA_MAX, which also avoids
+            // scaling a huge exponent such as 1E+1000000
+            if (decimal.signum() != 0 && decimal.precision() - decimal.scale() > 19) {
+                return NAN;
+            }
+            decimal = decimal.setScale(0);
+        }
+        final BigInteger mantissa = decimal.unscaledValue();
+        if (mantissa.bitLength() >= Long.SIZE) {
+            return NAN;
+        }
+        return encode(mantissa.longValue(), -decimal.scale());
     }
 
     /**
@@ -312,7 +349,7 @@ public final class Decimal64Flyweight {
      * @param factor      decimal flyweight value
      * @return product of the values or NAN indicating overflow
      */
-    public static long multiply(final long value, final long factor, Decimal64.Context context) {
+    public static long multiply(final long value, final long factor, DecimalContext context) {
         if (isNaN(value) || isNaN(factor)) {
             return NAN;
         }
@@ -323,9 +360,10 @@ public final class Decimal64Flyweight {
         final long factorMantissa = mantissa(factor);
         final int valueDecimals = -exponent(value);
         final int factorDecimals = -exponent(factor);
+        final boolean negative = (valueMantissa < 0) != (factorMantissa < 0);
         final long product = roundedMultiply(Math.abs(valueMantissa), Math.abs(factorMantissa),
-            Math.min(valueDecimals, factorDecimals), context.mode);
-        return encode((valueMantissa < 0) != (factorMantissa < 0) ? -product : product,
+            Math.min(valueDecimals, factorDecimals), negative, context.mode);
+        return encode(negative ? -product : product,
             -Math.max(valueDecimals, factorDecimals));
     }
 
@@ -335,7 +373,7 @@ public final class Decimal64Flyweight {
      * @param divisor  64-bit fixed decimal flyweight
      * @return rounded quotient 64-bit fixed decimal flyweight
      */
-    public static long divide(final long dividend, final long divisor, final Decimal64.Context context) {
+    public static long divide(final long dividend, final long divisor, final DecimalContext context) {
         if (isNaN(dividend) || isNaN(divisor) || isZero(divisor)) {
             return NAN;
         }
@@ -347,9 +385,10 @@ public final class Decimal64Flyweight {
         final int dividendDecimals = -exponent(dividend);
         final int divisorDecimals = -exponent(divisor);
         final int decimals = Math.max(dividendDecimals, divisorDecimals);
+        final boolean negative = (dividendMantissa < 0) != (divisorMantissa < 0);
         final long quotient = roundedDivide(Math.abs(dividendMantissa), divisorDecimals + decimals - dividendDecimals,
-            Math.abs(divisorMantissa), context);
-        return encode((dividendMantissa < 0) != (divisorMantissa < 0) ? -quotient : quotient, -decimals);
+            Math.abs(divisorMantissa), negative, context);
+        return encode(negative ? -quotient : quotient, -decimals);
     }
 
     /**
@@ -360,7 +399,7 @@ public final class Decimal64Flyweight {
      * @return decimal flyweight according to the rounding mode or NAN
      * indicating overflow
      */
-    public static long round(final long value, final int decimals, final Decimal64.Context context) {
+    public static long round(final long value, final int decimals, final DecimalContext context) {
         if (isNaN(value) || decimals < 0 || decimals > DECIMALS_MAX) {
             return NAN;
         }
@@ -381,13 +420,10 @@ public final class Decimal64Flyweight {
 
         final int scale = decimalCount - decimals;
         final long magnitude = Math.abs(mantissa);
-        long quotient = divideByPowerOf10(magnitude, scale);
+        final long quotient = divideByPowerOf10(magnitude, scale);
         final long remainder = magnitude - quotient * Powers10[scale];
-        // Round half up, i.e. when remainder / 10^scale >= 0.5
-        if (context.mode == DecimalRounding.UP && remainder >= Powers10[scale] - remainder) {
-            ++quotient;
-        }
-        return encode(mantissa < 0 ? -quotient : quotient, -decimals);
+        final long rounded = roundQuotient(quotient, remainder, Powers10[scale], mantissa < 0, context.mode);
+        return encode(mantissa < 0 ? -rounded : rounded, -decimals);
     }
 
     /**
@@ -408,7 +444,7 @@ public final class Decimal64Flyweight {
      * @param value decimal flyweight value
      * @return byte value
      */
-    public static byte byteValue(final long value, final Decimal64.Context context) {
+    public static byte byteValue(final long value, final DecimalContext context) {
         return (byte) longValue(value, context);
     }
 
@@ -418,7 +454,7 @@ public final class Decimal64Flyweight {
      * @param value decimal flyweight value
      * @return short value
      */
-    public static short shortValue(final long value, final Decimal64.Context context) {
+    public static short shortValue(final long value, final DecimalContext context) {
         return (short) longValue(value, context);
     }
 
@@ -428,7 +464,7 @@ public final class Decimal64Flyweight {
      * @param value decimal flyweight value
      * @return integer value
      */
-    public static int intValue(final long value, final Decimal64.Context context) {
+    public static int intValue(final long value, final DecimalContext context) {
         return (int) longValue(value, context);
     }
 
@@ -438,7 +474,7 @@ public final class Decimal64Flyweight {
      * @param value decimal flyweight value
      * @return long value or NAN indicating overflow
      */
-    public static long longValue(final long value, Decimal64.Context context) {
+    public static long longValue(final long value, DecimalContext context) {
         if (isNaN(value)) {
             return NAN;
         }
@@ -475,6 +511,19 @@ public final class Decimal64Flyweight {
         final long mantissa = mantissa(value);
         final int exponent = exponent(value);
         return mantissa / (double) Powers10[-exponent];
+    }
+
+    /**
+     * Returns the exact value as a BigDecimal with the same number of decimals.
+     * @param value decimal flyweight value
+     * @return BigDecimal value
+     * @throws ArithmeticException if the value is NaN, which BigDecimal cannot represent
+     */
+    public static BigDecimal toBigDecimal(final long value) {
+        if (isNaN(value)) {
+            throw new ArithmeticException("NaN cannot be converted to BigDecimal");
+        }
+        return BigDecimal.valueOf(mantissa(value), -exponent(value));
     }
 
     /**
@@ -540,15 +589,17 @@ public final class Decimal64Flyweight {
      * @param value  non-negative mantissa
      * @param factor non-negative mantissa
      * @param exponent power of ten exponent of the divisor, at most DECIMALS_MAX (10^7 is below 2^24)
+     * @param negative whether the signed product is negative
      * @param mode   rounding mode
      * @return non-negative rounded quotient or OVERFLOW
      */
     private static long roundedMultiply(final long value,
                                         final long factor,
                                         final int exponent,
+                                        final boolean negative,
                                         final DecimalRounding mode) {
         final long scale = Powers10[exponent];
-        long quotient;
+        final long quotient;
         final long remainder;
         if (Unsigned64Flyweight.numberOfBits(value) + Unsigned64Flyweight.numberOfBits(factor) < Long.SIZE - 1) {
             // product below 2^62, plain division measured faster here than divideByPowerOf10 (Apple M-series)
@@ -573,11 +624,7 @@ public final class Decimal64Flyweight {
                 return OVERFLOW;
             }
         }
-        // Round half up, i.e. when remainder / scale >= 0.5
-        if (mode == DecimalRounding.UP && remainder >= scale - remainder) {
-            ++quotient;
-        }
-        return quotient;
+        return roundQuotient(quotient, remainder, scale, negative, mode);
     }
 
     /**
@@ -586,14 +633,16 @@ public final class Decimal64Flyweight {
      * @param dividend non-negative mantissa
      * @param scale    power of ten exponent of the dividend scaling
      * @param divisor  positive mantissa
+     * @param negative whether the signed quotient is negative
      * @param context  helper
      * @return non-negative rounded quotient or OVERFLOW
      */
     private static long roundedDivide(final long dividend,
                                       final int scale,
                                       final long divisor,
-                                      final Decimal64.Context context) {
-        long quotient;
+                                      final boolean negative,
+                                      final DecimalContext context) {
+        final long quotient;
         final long remainder;
         if (dividend <= SCALE_LIMITS[scale]) {
             final long scaled = dividend * Powers10[scale];
@@ -607,15 +656,67 @@ public final class Decimal64Flyweight {
             if (((high << (Long.SIZE - bits)) | (low >>> bits)) >= divisor) {
                 return OVERFLOW;
             }
-            final MutableUnsigned128 result = context.remainder1;
+            final MutableUnsigned128 result = context.remainder;
             quotient = MutableUnsigned128.divide(high, low, divisor, result);
             remainder = result.lowBits();
         }
-        // Round half up, i.e. when remainder / divisor >= 0.5
-        if (context.mode == DecimalRounding.UP && remainder >= divisor - remainder) {
-            ++quotient;
+        return roundQuotient(quotient, remainder, divisor, negative, context.mode);
+    }
+
+    /**
+     * Returns a truncated non-negative quotient rounded according to the rounding mode, using
+     * the remainder of the division to decide whether to increment its magnitude.
+     * @param quotient  non-negative truncated quotient
+     * @param remainder remainder, 0 &lt;= remainder &lt; divisor
+     * @param divisor   positive divisor
+     * @param negative  whether the signed result is negative
+     * @param mode      rounding mode
+     * @return non-negative rounded quotient, or OVERFLOW for an inexact result and UNNECESSARY
+     */
+    private static long roundQuotient(final long quotient,
+                                      final long remainder,
+                                      final long divisor,
+                                      final boolean negative,
+                                      final DecimalRounding mode) {
+        // Compare remainder / divisor with 0.5 without overflowing 2 * remainder
+        final long half = divisor - remainder;
+        if (mode == DecimalRounding.HALF_UP) {
+            // common case kept small enough to inline into the arithmetic
+            return remainder >= half ? quotient + 1 : quotient;
         }
-        return quotient;
+        if (remainder == 0) {
+            return quotient;
+        }
+        return roundInexact(quotient, remainder, half, negative, mode);
+    }
+
+    /**
+     * Returns an inexact truncated non-negative quotient rounded according to any mode but HALF_UP.
+     * @param quotient  non-negative truncated quotient
+     * @param remainder remainder, 0 &lt; remainder &lt; divisor
+     * @param half      divisor - remainder
+     * @param negative  whether the signed result is negative
+     * @param mode      rounding mode
+     * @return non-negative rounded quotient, or OVERFLOW for UNNECESSARY
+     */
+    private static long roundInexact(final long quotient,
+                                     final long remainder,
+                                     final long half,
+                                     final boolean negative,
+                                     final DecimalRounding mode) {
+        if (mode == DecimalRounding.UNNECESSARY) {
+            return OVERFLOW;
+        }
+        final boolean increment = switch (mode) {
+            case UP -> true;
+            case DOWN, UNNECESSARY -> false;
+            case CEILING -> !negative;
+            case FLOOR -> negative;
+            case HALF_UP -> remainder >= half;
+            case HALF_DOWN -> remainder > half;
+            case HALF_EVEN -> remainder > half || (remainder == half && (quotient & 1) != 0);
+        };
+        return increment ? quotient + 1 : quotient;
     }
 
     /**

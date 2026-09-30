@@ -1,11 +1,12 @@
 package org.limitless.fixdec4j;
 
 /**
- * This class provides 128-bit unsigned arithmetics with mutable semantics.
+ * This class provides 128-bit unsigned arithmetics with mutable semantics. It is an internal
+ * building block for the decimal types and not part of the public API.
  * <a href="https://www.codeproject.com/Tips/784635/UInt-Bit-Operations">Unsigned integer 128 bit operations</a>
  * @author fredrikdahlberg
  */
-public final class MutableUnsigned128 implements Comparable<MutableUnsigned128> {
+final class MutableUnsigned128 implements Comparable<MutableUnsigned128> {
     private static final long INT_BITS = 0xffffffffL;
     private static final long LIMIT = 1L << Integer.SIZE;
 
@@ -530,36 +531,15 @@ public final class MutableUnsigned128 implements Comparable<MutableUnsigned128> 
         return quotient;
     }
 
-    public static class Context {
+    static final class Context {
         final MutableUnsigned128 term = new MutableUnsigned128();
         final MutableUnsigned128 factor = new MutableUnsigned128();
         final MutableUnsigned128 divisor = new MutableUnsigned128();
         final MutableUnsigned128 remainder1 = new MutableUnsigned128();
         final MutableUnsigned128 remainder2 = new MutableUnsigned128();
-        final MutableUnsigned128 product = new MutableUnsigned128();
-        final MutableUnsigned128 scale = new MutableUnsigned128();
-        final MutableUnsigned128 rounding = new MutableUnsigned128();
         final MutableUnsigned128 quotient = new MutableUnsigned128();
         final MutableUnsigned128 v1 = new MutableUnsigned128();
         final MutableUnsigned128 u1 = new MutableUnsigned128();
         final MutableUnsigned128 q1 = new MutableUnsigned128();
-
-        final DecimalRounding mode;
-
-        Context() {
-            this(DecimalRounding.UP);
-        }
-
-        public Context(DecimalRounding mode) {
-            this.mode = mode;
-        }
-
-        public DecimalRounding roundingMode() {
-            return mode;
-        }
-
-        public static Context build(DecimalRounding mode) {
-            return new Context(mode);
-        }
     }
 }

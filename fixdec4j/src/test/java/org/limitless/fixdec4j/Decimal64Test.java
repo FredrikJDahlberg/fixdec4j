@@ -7,8 +7,8 @@ import static org.junit.jupiter.api.Assertions.*;
 
 public class Decimal64Test {
 
-    private static final Decimal64.Context IMMUTABLE = new Decimal64.Context(DecimalRounding.UP);
-    private static final MutableDecimal64.Context MUTABLE = new MutableDecimal64.Context(DecimalRounding.UP);
+    private static final DecimalContext IMMUTABLE = new DecimalContext(DecimalRounding.HALF_UP);
+    private static final DecimalContext MUTABLE = new DecimalContext(DecimalRounding.HALF_UP);
 
 	private static long of(final long mantissa, final int exponent) {
 		return Decimal64Flyweight.valueOf(mantissa, exponent);
@@ -480,7 +480,7 @@ public class Decimal64Test {
 	private static void round(final long a, final int b, final DecimalRounding mode, final long c) {
 		System.out.format("%de%d, round(%s, %d) = %s%n", Decimal64Flyweight.mantissa(c),
             Decimal64Flyweight.exponent(c), Decimal64Flyweight.toString(a), b, Decimal64Flyweight.toString(c));
-        final MutableDecimal64.Context context = new MutableDecimal64.Context(mode);
+        final DecimalContext context = new DecimalContext(mode);
 		final long r = Decimal64Flyweight.round(a, b, context);
 		assertEquals(r, c, "Expected " + Decimal64Flyweight.toString(c) + ", Value=" + Decimal64Flyweight.toString(r));
 
@@ -496,29 +496,29 @@ public class Decimal64Test {
 
 	@Test
 	public void checkRounding() {
-		round(of(4_897, -3), 2, DecimalRounding.UP, of(4_90, -2));
-		round(of(4_897, -3), 4, DecimalRounding.UP, of(4_8970, -4));
-		round(of(-4_897, -3), 2, DecimalRounding.UP, of(-4_90, -2));
-		round(of(-4_897, -3), 4, DecimalRounding.UP, of(-4_8970, -4));
+		round(of(4_897, -3), 2, DecimalRounding.HALF_UP, of(4_90, -2));
+		round(of(4_897, -3), 4, DecimalRounding.HALF_UP, of(4_8970, -4));
+		round(of(-4_897, -3), 2, DecimalRounding.HALF_UP, of(-4_90, -2));
+		round(of(-4_897, -3), 4, DecimalRounding.HALF_UP, of(-4_8970, -4));
 
-		round(of(4_895, -3), 2, DecimalRounding.UP, of(4_90, -2));
-		round(of(4_895, -3), 4, DecimalRounding.UP, of(4_8950, -4));
-		round(of(-4_895, -3), 2, DecimalRounding.UP, of(-4_90, -2));
-		round(of(-4_895, -3), 4, DecimalRounding.UP, of(-4_8950, -4));
+		round(of(4_895, -3), 2, DecimalRounding.HALF_UP, of(4_90, -2));
+		round(of(4_895, -3), 4, DecimalRounding.HALF_UP, of(4_8950, -4));
+		round(of(-4_895, -3), 2, DecimalRounding.HALF_UP, of(-4_90, -2));
+		round(of(-4_895, -3), 4, DecimalRounding.HALF_UP, of(-4_8950, -4));
 
-		round(of(4_894, -3), 2, DecimalRounding.UP, of(4_89, -2));
-		round(of(4_894, -3), 4, DecimalRounding.UP, of(4_8940, -4));
-		round(of(-4_894, -3), 2, DecimalRounding.UP, of(-4_89, -2));
-		round(of(-4_894, -3), 4, DecimalRounding.UP, of(-4_8940, -4));
+		round(of(4_894, -3), 2, DecimalRounding.HALF_UP, of(4_89, -2));
+		round(of(4_894, -3), 4, DecimalRounding.HALF_UP, of(4_8940, -4));
+		round(of(-4_894, -3), 2, DecimalRounding.HALF_UP, of(-4_89, -2));
+		round(of(-4_894, -3), 4, DecimalRounding.HALF_UP, of(-4_8940, -4));
 
-		round(of(3_99558, -5), 2, DecimalRounding.UP, of(4_00, -2));
-		round(of(-3_99558, -5), 2, DecimalRounding.UP, of(-4_00, -2));
+		round(of(3_99558, -5), 2, DecimalRounding.HALF_UP, of(4_00, -2));
+		round(of(-3_99558, -5), 2, DecimalRounding.HALF_UP, of(-4_00, -2));
 
-		round(of(93500189, -7), 6, DecimalRounding.UP, of(9350019, -6));
-		round(of(100_0000, -4), 3, DecimalRounding.UP, of(100_000, -3));
-		round(of(99_9994, -4), 3, DecimalRounding.UP, of(99_999, -3));
-		round(of(99_9995, -4), 3, DecimalRounding.UP, of(100_000, -3));
-		round(of(99_9999, -4), 3, DecimalRounding.UP, of(100_000, -3));
+		round(of(93500189, -7), 6, DecimalRounding.HALF_UP, of(9350019, -6));
+		round(of(100_0000, -4), 3, DecimalRounding.HALF_UP, of(100_000, -3));
+		round(of(99_9994, -4), 3, DecimalRounding.HALF_UP, of(99_999, -3));
+		round(of(99_9995, -4), 3, DecimalRounding.HALF_UP, of(100_000, -3));
+		round(of(99_9999, -4), 3, DecimalRounding.HALF_UP, of(100_000, -3));
 
 		round(of(5_5, -1), 0, DecimalRounding.DOWN, of(5, 0));
 
@@ -546,7 +546,7 @@ public class Decimal64Test {
 		round(of(99_9995, -4), 3, DecimalRounding.DOWN, of(99_999, -3));
 		round(of(99_9999, -4), 3, DecimalRounding.DOWN, of(99_999, -3));
 
-		round(Decimal64Flyweight.NAN, 3, DecimalRounding.UP, Decimal64Flyweight.NAN);
+		round(Decimal64Flyweight.NAN, 3, DecimalRounding.HALF_UP, Decimal64Flyweight.NAN);
 		round(Decimal64Flyweight.NAN, 3, DecimalRounding.DOWN, Decimal64Flyweight.NAN);
 	}
 

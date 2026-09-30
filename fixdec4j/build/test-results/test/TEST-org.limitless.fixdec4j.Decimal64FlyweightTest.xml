@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="org.limitless.fixdec4j.Decimal64FlyweightTest" tests="16" skipped="0" failures="0" errors="0" timestamp="2026-09-30T18:23:00.915Z" hostname="MacBook-Pro" time="0.008">
+  <properties/>
+  <testcase name="divide128()" classname="org.limitless.fixdec4j.Decimal64FlyweightTest" time="0.0"/>
+  <testcase name="toStringDigits()" classname="org.limitless.fixdec4j.Decimal64FlyweightTest" time="0.001"/>
+  <testcase name="divideOverflow()" classname="org.limitless.fixdec4j.Decimal64FlyweightTest" time="0.0"/>
+  <testcase name="compareValues()" classname="org.limitless.fixdec4j.Decimal64FlyweightTest" time="0.001"/>
+  <testcase name="divideNegative()" classname="org.limitless.fixdec4j.Decimal64FlyweightTest" time="0.0"/>
+  <testcase name="addOverflow()" classname="org.limitless.fixdec4j.Decimal64FlyweightTest" time="0.0"/>
+  <testcase name="divideSignSymmetry()" classname="org.limitless.fixdec4j.Decimal64FlyweightTest" time="0.0"/>
+  <testcase name="digitCounts()" classname="org.limitless.fixdec4j.Decimal64FlyweightTest" time="0.001"/>
+  <testcase name="divide64()" classname="org.limitless.fixdec4j.Decimal64FlyweightTest" time="0.0"/>
+  <testcase name="divideRoundsDown()" classname="org.limitless.fixdec4j.Decimal64FlyweightTest" time="0.001"/>
+  <testcase name="multiply128()" classname="org.limitless.fixdec4j.Decimal64FlyweightTest" time="0.0"/>
+  <testcase name="overflowIsNaN()" classname="org.limitless.fixdec4j.Decimal64FlyweightTest" time="0.0"/>
+  <testcase name="toStrings()" classname="org.limitless.fixdec4j.Decimal64FlyweightTest" time="0.0"/>
+  <testcase name="divideRoundsHalfUp()" classname="org.limitless.fixdec4j.Decimal64FlyweightTest" time="0.0"/>
+  <testcase name="multiply64()" classname="org.limitless.fixdec4j.Decimal64FlyweightTest" time="0.0"/>
+  <testcase name="divideByZero()" classname="org.limitless.fixdec4j.Decimal64FlyweightTest" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

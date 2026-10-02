@@ -68,12 +68,25 @@ public enum Operands {
      * @param divide   decimal flyweight quotient
      */
     void verify(final long add, final long subtract, final long multiply, final long divide) {
+        verify(RoundingMode.HALF_UP, add, subtract, multiply, divide);
+    }
+
+    /**
+     * Fails fast unless the fixed decimal results equal BigDecimal rounded with a rounding mode to
+     * the largest number of decimals of the operands.
+     * @param mode     rounding mode of the product and quotient
+     * @param add      decimal flyweight sum
+     * @param subtract decimal flyweight difference
+     * @param multiply decimal flyweight product
+     * @param divide   decimal flyweight quotient
+     */
+    void verify(final RoundingMode mode, final long add, final long subtract, final long multiply, final long divide) {
         final BigDecimal value1 = bigValue1();
         final BigDecimal value2 = bigValue2();
         verify("add", value1.add(value2), add);
         verify("subtract", value1.subtract(value2), subtract);
-        verify("multiply", value1.multiply(value2).setScale(decimals(), RoundingMode.HALF_UP), multiply);
-        verify("divide", value1.divide(value2, decimals(), RoundingMode.HALF_UP), divide);
+        verify("multiply", value1.multiply(value2).setScale(decimals(), mode), multiply);
+        verify("divide", value1.divide(value2, decimals(), mode), divide);
     }
 
     private void verify(final String operation, final BigDecimal expected, final long result) {

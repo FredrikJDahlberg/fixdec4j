@@ -9,6 +9,8 @@ import java.util.SplittableRandom;
 import java.util.function.Supplier;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /**
  * Verifies every rounding mode against BigDecimal with the corresponding java.math.RoundingMode.
@@ -24,6 +26,19 @@ public class DecimalRoundingTest {
             assertEquals(mode.name(), RoundingMode.valueOf(mode.name()).name());
         }
         assertEquals(RoundingMode.values().length, DecimalRounding.values().length);
+    }
+
+    @Test
+    public void sharesOneContextPerMode() {
+        for (final DecimalRounding mode : DecimalRounding.values()) {
+            final DecimalContext context = DecimalContext.of(mode);
+            assertEquals(mode, context.roundingMode());
+            assertSame(context, DecimalContext.of(mode));
+            assertEquals("DecimalContext[roundingMode=" + mode + "]", context.toString());
+        }
+        assertSame(DecimalContext.HALF_UP, DecimalContext.of(DecimalRounding.HALF_UP));
+        assertSame(DecimalContext.UNNECESSARY, DecimalContext.of(DecimalRounding.UNNECESSARY));
+        assertThrows(NullPointerException.class, () -> DecimalContext.of(null));
     }
 
     @Test
@@ -52,7 +67,7 @@ public class DecimalRoundingTest {
         };
         final DecimalRounding[] modes = DecimalRounding.values();
         for (int m = 0; m < modes.length; m++) {
-            final DecimalContext context = new DecimalContext(modes[m]);
+            final DecimalContext context = DecimalContext.of(modes[m]);
             for (int i = 0; i < inputs.length; i++) {
                 final long rounded = Decimal64Flyweight.round(Decimal64Flyweight.valueOf(inputs[i]), 0, context);
                 final String actual = Decimal64Flyweight.isNaN(rounded) ? "NaN" : Decimal64Flyweight.toString(rounded);
@@ -65,7 +80,7 @@ public class DecimalRoundingTest {
     public void roundMatchesBigDecimal() {
         final SplittableRandom random = new SplittableRandom(42);
         for (final DecimalRounding mode : DecimalRounding.values()) {
-            final DecimalContext context = new DecimalContext(mode);
+            final DecimalContext context = DecimalContext.of(mode);
             for (int i = 0; i < 20_000; i++) {
                 final long value = randomValue(random);
                 final int decimals = random.nextInt(Decimal64Flyweight.DECIMALS_MAX + 1);
@@ -80,7 +95,7 @@ public class DecimalRoundingTest {
     public void multiplyMatchesBigDecimal() {
         final SplittableRandom random = new SplittableRandom(43);
         for (final DecimalRounding mode : DecimalRounding.values()) {
-            final DecimalContext context = new DecimalContext(mode);
+            final DecimalContext context = DecimalContext.of(mode);
             for (int i = 0; i < 20_000; i++) {
                 final long value = randomValue(random);
                 final long factor = randomValue(random);
@@ -96,7 +111,7 @@ public class DecimalRoundingTest {
     public void divideMatchesBigDecimal() {
         final SplittableRandom random = new SplittableRandom(44);
         for (final DecimalRounding mode : DecimalRounding.values()) {
-            final DecimalContext context = new DecimalContext(mode);
+            final DecimalContext context = DecimalContext.of(mode);
             for (int i = 0; i < 20_000; i++) {
                 final long dividend = randomValue(random);
                 final long divisor = randomValue(random);
@@ -113,7 +128,7 @@ public class DecimalRoundingTest {
 
     @Test
     public void halfEvenTies() {
-        final DecimalContext context = new DecimalContext(DecimalRounding.HALF_EVEN);
+        final DecimalContext context = DecimalContext.HALF_EVEN;
         // multiply: 0.5 * 0.5 = 0.25 -> 0.2, 0.5 * 0.7 = 0.35 -> 0.4
         assertEquals(Decimal64Flyweight.valueOf(2, -1), Decimal64Flyweight.multiply(
             Decimal64Flyweight.valueOf(5, -1), Decimal64Flyweight.valueOf(5, -1), context));
@@ -128,7 +143,7 @@ public class DecimalRoundingTest {
 
     @Test
     public void unnecessaryIsNaNWhenInexact() {
-        final DecimalContext context = new DecimalContext(DecimalRounding.UNNECESSARY);
+        final DecimalContext context = DecimalContext.UNNECESSARY;
         assertEquals(Decimal64Flyweight.NAN, Decimal64Flyweight.divide(
             Decimal64Flyweight.valueOf(1, 0), Decimal64Flyweight.valueOf(3, 0), context));
         assertEquals(Decimal64Flyweight.valueOf(5, -1), Decimal64Flyweight.divide(
@@ -140,12 +155,12 @@ public class DecimalRoundingTest {
 
     @Test
     public void objectsUseContextMode() {
-        final DecimalContext context = new DecimalContext(DecimalRounding.FLOOR);
+        final DecimalContext context = DecimalContext.FLOOR;
         final Decimal64 value = Decimal64.valueOf(-11, -1);
         assertEquals(Decimal64.valueOf(-2, 0).toLongBits(), value.round(0, context).toLongBits());
         final MutableDecimal64 mutable = MutableDecimal64.valueOf(-11, -1);
         assertEquals(Decimal64.valueOf(-2, 0).toLongBits(),
-            mutable.round(0, new DecimalContext(DecimalRounding.FLOOR)).toLongBits());
+            mutable.round(0, DecimalContext.FLOOR).toLongBits());
     }
 
     /**

@@ -18,15 +18,20 @@ public class Decimal64FlyweightBenchmark {
     @Param
     Operands operands;
 
+    // HALF_UP is inlined into the arithmetic, the other modes take a separate path
+    @Param({"HALF_UP", "HALF_EVEN"})
+    DecimalRounding rounding;
+
     long value;
     long decimal;
-    DecimalContext context = new DecimalContext(DecimalRounding.HALF_UP);
+    DecimalContext context;
 
     @Setup
     public void setup() {
+        context = DecimalContext.of(rounding);
         value = operands.value1();
         decimal = operands.value2();
-        operands.verify(add(), subtract(), multiply(), divide());
+        operands.verify(rounding.toRoundingMode(), add(), subtract(), multiply(), divide());
     }
 
     @Benchmark

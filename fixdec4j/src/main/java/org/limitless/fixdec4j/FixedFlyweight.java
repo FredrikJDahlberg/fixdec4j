@@ -3,6 +3,7 @@ package org.limitless.fixdec4j;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
+import java.util.Objects;
 
 /**
  * Fixed-scale decimal arithmetic on a long holding the value times 10^decimals, e.g. 123.45 with
@@ -10,8 +11,8 @@ import java.nio.charset.StandardCharsets;
  * operation, normally through a FixedDecimal. Long.MIN_VALUE is NaN, so a value ranges from
  * -Long.MAX_VALUE to Long.MAX_VALUE units of 10^-decimals.
  * <p>
- * Divisions by powers of ten use a switch of constant divisors, which the JIT compiles to a
- * multiplication by the reciprocal whether or not the number of decimals is a constant.
+ * Divisions by powers of ten multiply by a precomputed reciprocal, see PowersOf10, so they cost
+ * the same whether or not the number of decimals is a constant.
  * Products and scaled dividends use 128-bit intermediates, so multiply and divide only overflow
  * when the result does not fit.
  * @author fredrikdahlberg
@@ -20,6 +21,8 @@ final class FixedFlyweight {
     static final long NAN = Long.MIN_VALUE;
     static final int INT_NAN = Integer.MIN_VALUE;
     static final int DECIMALS_MAX = 9;
+    // a sign, 19 digits and the point
+    static final int STRING_LENGTH_MAX = 21;
 
     // negative magnitude signalling overflow, or an inexact result with UNNECESSARY
     private static final long OVERFLOW = -1;
@@ -103,6 +106,70 @@ final class FixedFlyweight {
             magnitude = roundedDivideByScaledDivisor(x, y, -exponent, negative, context.mode);
         }
         return magnitude < 0 ? NAN : negative ? -magnitude : magnitude;
+    }
+
+    /**
+     * Returns a value times an integer, exact, or NaN on overflow.
+     */
+    static long multiplyByInteger(final long value, final long integer) {
+        final long high = Math.multiplyHigh(value, integer);
+        final long low = value * integer;
+        // NaN is checked explicitly since NaN times 0 is 0
+        return value == NAN || high != (low >> (Long.SIZE - 1)) || low == NAN ? NAN : low;
+    }
+
+    /**
+     * Returns a value with decimals rounded to places decimals, still with decimals decimals. Fewer
+     * than zero places round to tens, hundreds and so on.
+     */
+    static long round(final long value, final int decimals, final int places, final DecimalContext context) {
+        if (value == NAN || places >= decimals) {
+            return value;
+        }
+        final int exponent = decimals - places;
+        if (exponent > PowersOf10.EXPONENT_MAX) {
+            return NAN;
+        }
+        final long magnitude = roundedDivideByPowerOf10(Math.abs(value), exponent, value < 0, context.mode);
+        // also OVERFLOW for a negative magnitude, an inexact result with UNNECESSARY
+        final long rounded = scaleUp(0, magnitude, exponent);
+        return rounded < 0 ? NAN : value < 0 ? -rounded : rounded;
+    }
+
+    /**
+     * Returns the largest integer not above a value, with decimals decimals.
+     */
+    static long floor(final long value, final int decimals) {
+        return round(value, decimals, 0, DecimalContext.FLOOR);
+    }
+
+    /**
+     * Returns the smallest integer not below a value, with decimals decimals, or NaN on overflow.
+     */
+    static long ceil(final long value, final int decimals) {
+        return round(value, decimals, 0, DecimalContext.CEILING);
+    }
+
+    /**
+     * Returns the remainder of two values in the same scale, exact, with the sign of the dividend.
+     */
+    static long remainder(final long dividend, final long divisor) {
+        return dividend == NAN || divisor == NAN || divisor == 0 ? NAN : dividend % divisor;
+    }
+
+    /**
+     * Returns a value rounded to a multiple of a positive increment in the same scale, e.g. a tick size.
+     */
+    static long roundToIncrement(final long value, final long increment, final DecimalContext context) {
+        if (value == NAN || increment <= 0) {
+            return NAN;
+        }
+        final long magnitude = Math.abs(value);
+        final long quotient = magnitude / increment;
+        final long multiple = round(quotient, magnitude - quotient * increment, increment, value < 0, context.mode);
+        final long high = Math.multiplyHigh(multiple, increment);
+        final long rounded = multiple * increment;
+        return multiple < 0 || high != 0 || rounded < 0 ? NAN : value < 0 ? -rounded : rounded;
     }
 
     /**
@@ -326,6 +393,60 @@ final class FixedFlyweight {
         return value == NAN ? "NaN" : Decimal64Flyweight.toString(value, decimals);
     }
 
+    /**
+     * Writes a value as ASCII like toString, without allocating.
+     * @return number of bytes written, at most STRING_LENGTH_MAX
+     */
+    static int toBytes(final long value, final int decimals, final byte[] bytes, final int offset) {
+        if (value == NAN) {
+            Objects.checkFromIndexSize(offset, 3, bytes.length);
+            bytes[offset] = 'N';
+            bytes[offset + 1] = 'a';
+            bytes[offset + 2] = 'N';
+            return 3;
+        }
+        final long magnitude = Math.abs(value);
+        final long integer = PowersOf10.divide(magnitude, decimals);
+        final int integerDigits = Decimal64Flyweight.digitsBase10(integer);
+        final int sign = value < 0 ? 1 : 0;
+        final int length = sign + integerDigits + (decimals > 0 ? decimals + 1 : 0);
+        Objects.checkFromIndexSize(offset, length, bytes.length);
+        int end = offset + length;
+        if (decimals > 0) {
+            writeDigits(bytes, end, magnitude - integer * POWERS10[decimals], decimals);
+            end -= decimals + 1;
+            bytes[end] = '.';
+        }
+        writeDigits(bytes, end, integer, integerDigits);
+        if (sign != 0) {
+            bytes[offset] = '-';
+        }
+        return length;
+    }
+
+    /**
+     * Writes the last count digits of a non-negative value, zero padded, before end, eight at a time.
+     */
+    private static void writeDigits(final byte[] bytes, final int end, final long value, final int count) {
+        long remaining = value;
+        int position = end;
+        int digits = count;
+        while (digits >= Long.BYTES) {
+            final long upper = PowersOf10.divide(remaining, 8);
+            position -= Long.BYTES;
+            Swar.store(bytes, position, Swar.formatDigits((int) (remaining - upper * 100_000_000L)));
+            remaining = upper;
+            digits -= Long.BYTES;
+        }
+        if (digits > 0) {
+            // the last digits of eight, the last digit in the highest byte
+            final long word = Swar.formatDigits((int) (remaining - PowersOf10.divide(remaining, 8) * 100_000_000L));
+            for (int i = 1; i <= digits; ++i) {
+                bytes[position - i] = (byte) (word >>> (Long.SIZE - Byte.SIZE * i));
+            }
+        }
+    }
+
     private static int numberOfBits(final long value) {
         return Long.SIZE - Long.numberOfLeadingZeros(value);
     }
@@ -348,7 +469,7 @@ final class FixedFlyweight {
      */
     private static long roundedDivideByPowerOf10(final long value, final int exponent, final boolean negative,
                                                  final DecimalRounding mode) {
-        final long quotient = divideByPowerOf10(value, exponent);
+        final long quotient = PowersOf10.divide(value, exponent);
         final long divisor = POWERS10[exponent];
         return round(quotient, value - quotient * divisor, divisor, negative, mode);
     }
@@ -368,9 +489,9 @@ final class FixedFlyweight {
         // divide in 32-bit digits: high is below the divisor, which is below 2^30, so every partial
         // dividend is below 2^62 and every partial quotient below 2^32
         final long upper = (high << Integer.SIZE) | (low >>> Integer.SIZE);
-        final long upperQuotient = divideByPowerOf10(upper, exponent);
+        final long upperQuotient = PowersOf10.divide(upper, exponent);
         final long lower = ((upper - upperQuotient * divisor) << Integer.SIZE) | (low & INT_MASK);
-        final long lowerQuotient = divideByPowerOf10(lower, exponent);
+        final long lowerQuotient = PowersOf10.divide(lower, exponent);
         final long quotient = (upperQuotient << Integer.SIZE) | lowerQuotient;
         if (quotient < 0) {
             return OVERFLOW;
@@ -390,12 +511,12 @@ final class FixedFlyweight {
         if (high >= divisor) {
             return OVERFLOW; // quotient of at least 2^64
         }
-        final MutableUnsigned128 remainder = context.remainder;
-        final long quotient = MutableUnsigned128.divide(high, low, divisor, remainder);
+        final long quotient = MutableUnsigned128.divide(high, low, divisor);
         if (quotient < 0) {
             return OVERFLOW;
         }
-        return round(quotient, remainder.lowBits(), divisor, negative, context.mode);
+        // the remainder is below 2^64, so the low 64 bits of low - quotient * divisor are exact
+        return round(quotient, low - quotient * divisor, divisor, negative, context.mode);
     }
 
     /**
@@ -450,34 +571,5 @@ final class FixedFlyweight {
             case HALF_EVEN -> Long.compareUnsigned(remainder, half) > 0 || (remainder == half && (quotient & 1) != 0);
         };
         return increment ? quotient + 1 : quotient;
-    }
-
-    /**
-     * Returns a non-negative value divided by 10^exponent. The divisors are constants so that the
-     * JIT replaces the division with a multiplication by the reciprocal.
-     */
-    private static long divideByPowerOf10(final long value, final int exponent) {
-        return switch (exponent) {
-            case 0 -> value;
-            case 1 -> value / 10L;
-            case 2 -> value / 100L;
-            case 3 -> value / 1_000L;
-            case 4 -> value / 10_000L;
-            case 5 -> value / 100_000L;
-            case 6 -> value / 1_000_000L;
-            case 7 -> value / 10_000_000L;
-            case 8 -> value / 100_000_000L;
-            case 9 -> value / 1_000_000_000L;
-            case 10 -> value / 10_000_000_000L;
-            case 11 -> value / 100_000_000_000L;
-            case 12 -> value / 1_000_000_000_000L;
-            case 13 -> value / 10_000_000_000_000L;
-            case 14 -> value / 100_000_000_000_000L;
-            case 15 -> value / 1_000_000_000_000_000L;
-            case 16 -> value / 10_000_000_000_000_000L;
-            case 17 -> value / 100_000_000_000_000_000L;
-            case 18 -> value / 1_000_000_000_000_000_000L;
-            default -> throw new IllegalArgumentException("exponent " + exponent);
-        };
     }
 }

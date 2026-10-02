@@ -11,8 +11,8 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class BigDecimalConversionTest {
 
-    private static final DecimalContext HALF_UP = new DecimalContext(DecimalRounding.HALF_UP);
-    private static final DecimalContext UNNECESSARY = new DecimalContext(DecimalRounding.UNNECESSARY);
+    private static final DecimalContext HALF_UP = DecimalContext.HALF_UP;
+    private static final DecimalContext UNNECESSARY = DecimalContext.UNNECESSARY;
 
     @Test
     public void toBigDecimalKeepsDecimals() {
@@ -27,7 +27,7 @@ public class BigDecimalConversionTest {
     public void toBigDecimalOfNaNThrows() {
         assertThrows(ArithmeticException.class, () -> Decimal64Flyweight.toBigDecimal(Decimal64Flyweight.NAN));
         assertThrows(ArithmeticException.class, Decimal64.NAN::toBigDecimal);
-        assertThrows(ArithmeticException.class, () -> new MutableDecimal64(MutableDecimal64.NAN).toBigDecimal());
+        assertThrows(ArithmeticException.class, () -> new MutableDecimal64(MutableDecimal64.nan()).toBigDecimal());
     }
 
     @Test
@@ -46,7 +46,7 @@ public class BigDecimalConversionTest {
     public void valueOfMatchesSetScale() {
         final SplittableRandom random = new SplittableRandom(46);
         for (final DecimalRounding mode : DecimalRounding.values()) {
-            final DecimalContext context = new DecimalContext(mode);
+            final DecimalContext context = DecimalContext.of(mode);
             for (int i = 0; i < 20_000; i++) {
                 final BigInteger unscaled = new BigInteger(random.nextInt(1, 72), new java.util.Random(random.nextLong()));
                 final BigDecimal value = new BigDecimal(random.nextBoolean() ? unscaled : unscaled.negate(),
@@ -87,7 +87,7 @@ public class BigDecimalConversionTest {
         // more than DECIMALS_MAX decimals rounds with the mode of the context
         final BigDecimal tie = new BigDecimal("0.00000025");
         assertEquals(new BigDecimal("0.0000002"),
-            Decimal64.valueOf(tie, new DecimalContext(DecimalRounding.HALF_EVEN)).toBigDecimal());
+            Decimal64.valueOf(tie, DecimalContext.HALF_EVEN).toBigDecimal());
         assertEquals(new BigDecimal("0.0000003"), MutableDecimal64.valueOf(tie, HALF_UP).toBigDecimal());
     }
 
@@ -98,7 +98,7 @@ public class BigDecimalConversionTest {
                 "1E-1000000", "-1E-1000000"}) {
                 final BigDecimal value = new BigDecimal(tiny);
                 assertEquals(value.scale() > 100 ? expected(new BigDecimal(tiny.replace("1000000", "9")), mode) :
-                    expected(value, mode), Decimal64Flyweight.valueOf(value, new DecimalContext(mode)), mode + " " + tiny);
+                    expected(value, mode), Decimal64Flyweight.valueOf(value, DecimalContext.of(mode)), mode + " " + tiny);
             }
         }
     }

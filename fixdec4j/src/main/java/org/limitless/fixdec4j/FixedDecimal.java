@@ -19,20 +19,40 @@ import java.util.Objects;
  * Operations that combine scales return a value in the scale of the receiver. The raw long values
  * carry no scale, so passing a value of another scale to a same-scale operation is not detected.
  * <p>
- * Held in a static final field, the record is a constant to the JIT; otherwise the divisions by
- * powers of ten still compile to multiplications through a switch of constant divisors.
+ * The divisions by powers of ten multiply by a precomputed reciprocal, so a scale read from
+ * configuration is as fast as one held in a static final field.
  * @param decimals number of decimals, 0 to DECIMALS_MAX
  * @param <S> phantom type of the values
  * @author fredrikdahlberg
  */
 public record FixedDecimal<S>(int decimals) {
+    /** Largest number of decimals of a scale. */
     public static final int DECIMALS_MAX = FixedFlyweight.DECIMALS_MAX;
+    /** Not a number, Long.MIN_VALUE, the result of an overflow, an invalid string or a division by zero. */
     public static final long NAN = FixedFlyweight.NAN;
+    /** Largest raw value in any scale. */
     public static final long MAX_VALUE = Long.MAX_VALUE;
+    /** Smallest raw value in any scale. */
     public static final long MIN_VALUE = -Long.MAX_VALUE;
     /** NaN of a value stored in 32 bits, see toInt. */
     public static final int INT_NAN = FixedFlyweight.INT_NAN;
+    /** Largest number of bytes written by toBytes: a sign, 19 digits and the point. */
+    public static final int STRING_LENGTH_MAX = FixedFlyweight.STRING_LENGTH_MAX;
 
+    // one shared instance per number of decimals, the type parameter only exists at compile time
+    private static final FixedDecimal<?>[] SCALES = new FixedDecimal<?>[DECIMALS_MAX + 1];
+
+    static {
+        for (int i = 0; i <= DECIMALS_MAX; ++i) {
+            SCALES[i] = new FixedDecimal<>(i);
+        }
+    }
+
+    /**
+     * Constructs a scale, prefer the shared instance returned by of.
+     * @param decimals number of decimals, 0 to DECIMALS_MAX
+     * @throws IllegalArgumentException if decimals is out of range
+     */
     public FixedDecimal {
         if (decimals < 0 || decimals > DECIMALS_MAX) {
             throw new IllegalArgumentException("decimals must be 0 to " + DECIMALS_MAX + ": " + decimals);
@@ -40,15 +60,25 @@ public record FixedDecimal<S>(int decimals) {
     }
 
     /**
-     * Returns a scale with a number of decimals.
+     * Returns a scale with a number of decimals, a shared instance.
      * @param decimals number of decimals, 0 to DECIMALS_MAX
      * @param <S> phantom type of the values
      * @return scale
+     * @throws IllegalArgumentException if decimals is out of range
      */
+    @SuppressWarnings("unchecked")
     public static <S> FixedDecimal<S> of(final int decimals) {
-        return new FixedDecimal<>(decimals);
+        if (decimals < 0 || decimals > DECIMALS_MAX) {
+            throw new IllegalArgumentException("decimals must be 0 to " + DECIMALS_MAX + ": " + decimals);
+        }
+        return (FixedDecimal<S>) SCALES[decimals];
     }
 
+    /**
+     * Returns whether a value is NaN.
+     * @param value value
+     * @return true when NaN
+     */
     public static boolean isNaN(final long value) {
         return value == NAN;
     }
@@ -146,22 +176,50 @@ public record FixedDecimal<S>(int decimals) {
         return FixedFlyweight.rescale(value, scale.decimals, decimals, context);
     }
 
+    /**
+     * Returns the sum of two values in this scale, exact.
+     * @param value value in this scale
+     * @param term  value in this scale
+     * @return sum or NAN indicating overflow
+     */
     public long add(final long value, final long term) {
         return FixedFlyweight.add(value, term);
     }
 
+    /**
+     * Returns the difference of two values in this scale, exact.
+     * @param value value in this scale
+     * @param term  value in this scale
+     * @return difference or NAN indicating overflow
+     */
     public long subtract(final long value, final long term) {
         return FixedFlyweight.subtract(value, term);
     }
 
-    public long negate(final long value) {
+    /**
+     * Returns the negated value.
+     * @param value value in this scale
+     * @return negated value, NAN when NaN
+     */
+    public long minus(final long value) {
         return -value; // NaN is Long.MIN_VALUE, which negates to itself
     }
 
+    /**
+     * Returns the absolute value.
+     * @param value value in this scale
+     * @return absolute value, NAN when NaN
+     */
     public long abs(final long value) {
         return Math.abs(value); // NaN is Long.MIN_VALUE, whose absolute value is itself
     }
 
+    /**
+     * Compares two values in this scale for order. NaN orders below every other value.
+     * @param value1 value in this scale
+     * @param value2 value in this scale
+     * @return negative, zero or positive as value1 is less than, equal to or greater than value2
+     */
     public int compare(final long value1, final long value2) {
         return Long.compare(value1, value2);
     }
@@ -215,6 +273,94 @@ public record FixedDecimal<S>(int decimals) {
                        final FixedDecimal<?> divisorScale, final DecimalContext context) {
         return FixedFlyweight.divide(dividend, dividendScale.decimals, divisor, divisorScale.decimals, decimals,
             context);
+    }
+
+    /**
+     * Returns a value times an integer, e.g. a price times a number of lots. The product is exact,
+     * so no rounding mode is needed.
+     * @param value   value in this scale
+     * @param integer integer factor
+     * @return product in this scale or NAN indicating overflow
+     */
+    public long multiplyByInteger(final long value, final long integer) {
+        return FixedFlyweight.multiplyByInteger(value, integer);
+    }
+
+    /**
+     * Returns a value divided by an integer, rounded, e.g. a notional split into a number of parts.
+     * @param value   value in this scale
+     * @param integer integer divisor
+     * @param context rounding mode
+     * @return quotient in this scale or NAN indicating division by zero (or by Long.MIN_VALUE)
+     */
+    public long divideByInteger(final long value, final long integer, final DecimalContext context) {
+        return FixedFlyweight.divide(value, decimals, integer, 0, decimals, context);
+    }
+
+    /**
+     * Returns a value rounded to fewer decimals, still in this scale, e.g. 101.2567 with 4 decimals
+     * rounded to 2 places is 101.2600. Negative places round to tens, hundreds and so on.
+     * @param value   value in this scale
+     * @param places  number of decimals to keep, at least decimals() - 18; the value is returned
+     *                unchanged when places is at least decimals()
+     * @param context rounding mode
+     * @return rounded value or NAN indicating overflow or places out of range
+     */
+    public long round(final long value, final int places, final DecimalContext context) {
+        return FixedFlyweight.round(value, decimals, places, context);
+    }
+
+    /**
+     * Returns a value rounded to a multiple of an increment in this scale, e.g. a price rounded to
+     * a tick size of 0.05.
+     * @param value     value in this scale
+     * @param increment positive increment in this scale
+     * @param context   rounding mode
+     * @return rounded value or NAN indicating overflow or an increment that is not positive
+     */
+    public long roundToIncrement(final long value, final long increment, final DecimalContext context) {
+        return FixedFlyweight.roundToIncrement(value, increment, context);
+    }
+
+    /**
+     * Returns the largest integer not above a value, in this scale, e.g. -101.25 floors to -102.00.
+     * @param value value in this scale
+     * @return integer value in this scale
+     */
+    public long floor(final long value) {
+        return FixedFlyweight.floor(value, decimals);
+    }
+
+    /**
+     * Returns the smallest integer not below a value, in this scale, e.g. 101.25 ceils to 102.00.
+     * @param value value in this scale
+     * @return integer value in this scale or NAN indicating overflow
+     */
+    public long ceil(final long value) {
+        return FixedFlyweight.ceil(value, decimals);
+    }
+
+    /**
+     * Returns the remainder of dividing two values in this scale, exact, with the sign of the
+     * dividend like BigDecimal.remainder, e.g. 10.25 % 3 is 1.25.
+     * @param dividend value in this scale
+     * @param divisor  value in this scale
+     * @return remainder or NAN indicating division by zero
+     */
+    public long remainder(final long dividend, final long divisor) {
+        return FixedFlyweight.remainder(dividend, divisor);
+    }
+
+    /**
+     * Writes a value as ASCII like toString, e.g. a field of a FIX message, without allocating.
+     * @param value  value
+     * @param bytes  buffer
+     * @param offset index of the first byte
+     * @return number of bytes written, at most STRING_LENGTH_MAX
+     * @throws IndexOutOfBoundsException if the string does not fit in the buffer
+     */
+    public int toBytes(final long value, final byte[] bytes, final int offset) {
+        return FixedFlyweight.toBytes(value, decimals, bytes, offset);
     }
 
     /**

@@ -410,7 +410,6 @@ final class MutableUnsigned128 implements Comparable<MutableUnsigned128> {
     public MutableUnsigned128 divide(final MutableUnsigned128 divisor,
                                      final MutableUnsigned128 inRemainder,
                                      final MutableUnsigned128.Context context) {
-        final MutableUnsigned128 remainder = context.remainder2; //new MutableUnsigned128();
         if ((highBits | divisor.highBits) == 0) {
             final long lowBits = this.lowBits;
             highBits = 0;
@@ -421,17 +420,17 @@ final class MutableUnsigned128 implements Comparable<MutableUnsigned128> {
             final long quotientLow;
             long quotientHigh = 0;
             if (Unsigned64Flyweight.compare(highBits, divisor.lowBits) <= -1) {
-                // remainder contains quotient and reminder
-                quotientLow = divide(highBits, lowBits, divisor.lowBits, remainder);
+                quotientLow = divide(highBits, lowBits, divisor.lowBits);
             } else {
                 quotientHigh = Unsigned64Flyweight.divide(highBits, divisor.lowBits);
                 final long remainderHigh = Unsigned64Flyweight.remainder(highBits, divisor.lowBits);
-                quotientLow = divide(remainderHigh, lowBits, divisor.lowBits, remainder);
+                quotientLow = divide(remainderHigh, lowBits, divisor.lowBits);
             }
+            inRemainder.highBits = 0;
+            // the remainder is below the divisor, so the low 64 bits of the difference are exact
+            inRemainder.lowBits = lowBits - quotientLow * divisor.lowBits;
             highBits = quotientHigh;
             lowBits = quotientLow;
-            inRemainder.highBits = 0;
-            inRemainder.lowBits = remainder.lowBits;
         } else {
             final MutableUnsigned128 v1 = context.v1;
             final MutableUnsigned128 u1 = context.u1;
@@ -439,7 +438,7 @@ final class MutableUnsigned128 implements Comparable<MutableUnsigned128> {
             final int zeros = Long.numberOfLeadingZeros(divisor.highBits);
             v1.set(divisor).shiftLeft(zeros);
             u1.set(this).shiftRight(1);
-            q1.lowBits = divide(u1.highBits, u1.lowBits, v1.highBits, remainder);
+            q1.lowBits = divide(u1.highBits, u1.lowBits, v1.highBits);
             q1.highBits = 0;
             q1.shiftRight(63 - zeros);
             if ((q1.highBits | q1.lowBits) != 0) {
@@ -468,15 +467,11 @@ final class MutableUnsigned128 implements Comparable<MutableUnsigned128> {
      * @param dividendHigh 64 higher bits
      * @param dividendLow  64 lower bits
      * @param divisor      64-bit
-     * @param result       returns the quotient and remainder as high bits and low bits respectively
-     * @return 64-bit quotient
+     * @return 64-bit quotient; the remainder is dividendLow - quotient * divisor (mod 2^64)
      * From <a href="http://www.codeproject.com/Tips/785014/UInt-Division-Modulus"
      * >www.codeproject.com</a>
      */
-    static long divide(final long dividendHigh,
-                               final long dividendLow,
-                               final long divisor,
-                               final MutableUnsigned128 result) {
+    static long divide(final long dividendHigh, final long dividendLow, final long divisor) {
         final int zeros = Long.numberOfLeadingZeros(divisor);
         long v = divisor << zeros;
         final long vn1 = v >>> Integer.SIZE;
@@ -524,11 +519,7 @@ final class MutableUnsigned128 implements Comparable<MutableUnsigned128> {
             }
         }
 
-        final long quotient = (q1 << Integer.SIZE) | q0;
-        final long remainder = ((un21 << Integer.SIZE) + (un0 - (q0 * v))) >>> zeros;
-        result.highBits = quotient;
-        result.lowBits = remainder;
-        return quotient;
+        return (q1 << Integer.SIZE) | q0;
     }
 
     static final class Context {
@@ -536,7 +527,6 @@ final class MutableUnsigned128 implements Comparable<MutableUnsigned128> {
         final MutableUnsigned128 factor = new MutableUnsigned128();
         final MutableUnsigned128 divisor = new MutableUnsigned128();
         final MutableUnsigned128 remainder1 = new MutableUnsigned128();
-        final MutableUnsigned128 remainder2 = new MutableUnsigned128();
         final MutableUnsigned128 quotient = new MutableUnsigned128();
         final MutableUnsigned128 v1 = new MutableUnsigned128();
         final MutableUnsigned128 u1 = new MutableUnsigned128();

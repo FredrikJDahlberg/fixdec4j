@@ -4,6 +4,7 @@ import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.math.RoundingMode;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.SplittableRandom;
@@ -11,6 +12,8 @@ import java.util.function.Supplier;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -29,7 +32,7 @@ public class FixedDecimalTest {
     static final FixedDecimal<Qty> QTY = FixedDecimal.of(2);
     static final FixedDecimal<Notional> NOTIONAL = FixedDecimal.of(2);
 
-    private static final DecimalContext HALF_UP = new DecimalContext(DecimalRounding.HALF_UP);
+    private static final DecimalContext HALF_UP = DecimalContext.HALF_UP;
     private static final BigInteger MAX = BigInteger.valueOf(Long.MAX_VALUE);
     private static final BigInteger MIN = MAX.negate();
 
@@ -56,7 +59,31 @@ public class FixedDecimalTest {
             .divide(MutableFixed64.valueOf(QTY, "2", HALF_UP), MutableFixed64.valueOf(QTY, "3", HALF_UP), HALF_UP)
             .toString());
         assertEquals(new BigDecimal("30375.00"), notional.toBigDecimal());
-        assertTrue(notional.negate().compareTo(new MutableFixed64<>(NOTIONAL)) < 0);
+        assertTrue(notional.minus().compareTo(new MutableFixed64<>(NOTIONAL)) < 0);
+    }
+
+    @Test
+    public void rejectsSameKindOfOtherScale() {
+        // same type parameter, different number of decimals: caught at runtime, assertions or not
+        final MutableFixed64<Price> price = MutableFixed64.valueOf(PRICE, "1.5", HALF_UP);
+        final MutableFixed64<Price> coarse = MutableFixed64.valueOf(FixedDecimal.<Price>of(2), "1.5", HALF_UP);
+        assertThrows(IllegalArgumentException.class, () -> price.add(coarse));
+        assertThrows(IllegalArgumentException.class, () -> price.subtract(coarse));
+        assertThrows(IllegalArgumentException.class, () -> price.set(coarse));
+        assertThrows(IllegalArgumentException.class, () -> price.compareTo(coarse));
+        assertEquals("1.50000000", price.toString());
+    }
+
+    @Test
+    public void sharesScales() {
+        assertSame(FixedDecimal.of(8), PRICE);
+        assertEquals(new FixedDecimal<Price>(8), PRICE);
+        final MutableFixed64<Price> price = MutableFixed64.valueOf(PRICE, "1.5", HALF_UP);
+        assertSame(PRICE, price.scale());
+        assertEquals(MutableFixed64.fromRaw(PRICE, 150_000_000L), price);
+        assertNotEquals(MutableFixed64.fromRaw(FixedDecimal.of(7), 150_000_000L), price);
+        assertEquals("1.50000000", price.toString());
+        assertEquals(new BigDecimal("1.50000000"), price.toBigDecimal());
     }
 
     @Test
@@ -74,7 +101,7 @@ public class FixedDecimalTest {
         assertEquals(FixedDecimal.NAN, PRICE.add(FixedDecimal.NAN, 0));
         assertEquals(FixedDecimal.NAN, PRICE.subtract(0, FixedDecimal.NAN));
         assertEquals(Long.MAX_VALUE, PRICE.add(Long.MAX_VALUE - 1, 1));
-        assertEquals(FixedDecimal.NAN, PRICE.negate(FixedDecimal.NAN));
+        assertEquals(FixedDecimal.NAN, PRICE.minus(FixedDecimal.NAN));
         assertEquals(FixedDecimal.NAN, PRICE.abs(FixedDecimal.NAN));
     }
 
@@ -94,7 +121,7 @@ public class FixedDecimalTest {
     public void multiplyMatchesBigDecimal() {
         final SplittableRandom random = new SplittableRandom(51);
         for (final DecimalRounding mode : DecimalRounding.values()) {
-            final DecimalContext context = new DecimalContext(mode);
+            final DecimalContext context = DecimalContext.of(mode);
             for (int i = 0; i < 50_000; i++) {
                 final FixedDecimal<?> aScale = randomScale(random);
                 final FixedDecimal<?> bScale = randomScale(random);
@@ -113,7 +140,7 @@ public class FixedDecimalTest {
     public void divideMatchesBigDecimal() {
         final SplittableRandom random = new SplittableRandom(52);
         for (final DecimalRounding mode : DecimalRounding.values()) {
-            final DecimalContext context = new DecimalContext(mode);
+            final DecimalContext context = DecimalContext.of(mode);
             for (int i = 0; i < 50_000; i++) {
                 final FixedDecimal<?> aScale = randomScale(random);
                 final FixedDecimal<?> bScale = randomScale(random);
@@ -132,7 +159,7 @@ public class FixedDecimalTest {
     public void convertMatchesBigDecimal() {
         final SplittableRandom random = new SplittableRandom(53);
         for (final DecimalRounding mode : DecimalRounding.values()) {
-            final DecimalContext context = new DecimalContext(mode);
+            final DecimalContext context = DecimalContext.of(mode);
             for (int i = 0; i < 50_000; i++) {
                 final FixedDecimal<?> from = randomScale(random);
                 final FixedDecimal<?> scale = randomScale(random);
@@ -172,7 +199,7 @@ public class FixedDecimalTest {
         assertEquals(12_346L, QTY.valueOf("123.455", HALF_UP));
         assertEquals(12_346L, QTY.valueOf(123_455L, -3, HALF_UP));
         assertEquals(0L, QTY.valueOf("1E-1000000", HALF_UP));
-        assertEquals(1L, QTY.valueOf("1E-1000000", new DecimalContext(DecimalRounding.UP)));
+        assertEquals(1L, QTY.valueOf("1E-1000000", DecimalContext.UP));
         assertEquals(FixedDecimal.NAN, QTY.valueOf("1E+1000000", HALF_UP));
         assertEquals(0L, QTY.valueOf("0E+1000000", HALF_UP));
         assertThrows(ArithmeticException.class, () -> QTY.toBigDecimal(FixedDecimal.NAN));
@@ -188,7 +215,7 @@ public class FixedDecimalTest {
             "0.005", "0.015", "0.025", "-0.005", "0.0050000000000000000001", "0.0049999999999999999999",
             "1e2", "1E-2", "1.5e+3", "-1.25E1", "1e", "e1", "1e2.5", "١٢", "1٢"};
         for (final DecimalRounding mode : DecimalRounding.values()) {
-            final DecimalContext context = new DecimalContext(mode);
+            final DecimalContext context = DecimalContext.of(mode);
             for (int decimals = 0; decimals <= FixedDecimal.DECIMALS_MAX; decimals++) {
                 final FixedDecimal<?> scale = FixedDecimal.of(decimals);
                 for (final String string : strings) {
@@ -219,7 +246,7 @@ public class FixedDecimalTest {
                 }
             }
             final DecimalRounding mode = DecimalRounding.values()[random.nextInt(DecimalRounding.values().length)];
-            assertParse(randomScale(random), builder.toString(), new DecimalContext(mode));
+            assertParse(randomScale(random), builder.toString(), DecimalContext.of(mode));
         }
     }
 
@@ -246,6 +273,174 @@ public class FixedDecimalTest {
         final String string = scale.toString(value);
         assertEquals(BigDecimal.valueOf(value, scale.decimals()).toPlainString(), string);
         assertEquals(value, scale.valueOf(string, HALF_UP));
+        assertToBytes(scale, value, string);
+    }
+
+    /**
+     * Asserts that toBytes writes the string at an offset and leaves the bytes around it unchanged.
+     */
+    private static void assertToBytes(final FixedDecimal<?> scale, final long value, final String string) {
+        final int offset = (int) (value & 7);
+        final byte[] buffer = new byte[offset + string.length() + 3];
+        Arrays.fill(buffer, (byte) '#');
+        final int length = scale.toBytes(value, buffer, offset);
+        assertEquals(string, new String(buffer, offset, length, StandardCharsets.ISO_8859_1));
+        assertTrue(length <= FixedDecimal.STRING_LENGTH_MAX);
+        for (int i = 0; i < buffer.length; i++) {
+            if (i < offset || i >= offset + length) {
+                assertEquals('#', buffer[i], string + " wrote outside its range at " + i);
+            }
+        }
+        // exactly the room needed, and one byte too few
+        assertEquals(length, scale.toBytes(value, new byte[length], 0));
+        assertThrows(IndexOutOfBoundsException.class, () -> scale.toBytes(value, new byte[length - 1], 0));
+    }
+
+    @Test
+    public void writesBytes() {
+        final byte[] message = new byte[32];
+        message[0] = '4';
+        message[1] = '4';
+        message[2] = '=';
+        final int length = PRICE.toBytes(PRICE.valueOf("-101.25", HALF_UP), message, 3);
+        message[3 + length] = 1;
+        assertEquals("44=-101.25000000\u0001", new String(message, 0, 4 + length, StandardCharsets.ISO_8859_1));
+        assertToBytes(QTY, FixedDecimal.NAN, "NaN");
+        assertToBytes(FixedDecimal.of(9), -Long.MAX_VALUE, "-9223372036.854775807");
+        assertToBytes(FixedDecimal.of(0), -Long.MAX_VALUE, "-9223372036854775807");
+        assertThrows(IndexOutOfBoundsException.class, () -> QTY.toBytes(1, message, -1));
+
+        final MutableFixed64<Price> price = MutableFixed64.valueOf(PRICE, "0.5", HALF_UP);
+        assertEquals(10, price.toBytes(message, 0));
+        assertEquals("0.50000000", new String(message, 0, 10, StandardCharsets.ISO_8859_1));
+    }
+
+    @Test
+    public void integerArithmetic() {
+        final long price = PRICE.valueOf("101.25", HALF_UP);
+        assertEquals("1012.50000000", PRICE.toString(PRICE.multiplyByInteger(price, 10)));
+        assertEquals("33.75000000", PRICE.toString(PRICE.divideByInteger(price, 3, HALF_UP)));
+        assertEquals("0.67", QTY.toString(QTY.divideByInteger(QTY.valueOf("2", HALF_UP), 3, HALF_UP)));
+        assertEquals(FixedDecimal.NAN, PRICE.divideByInteger(price, 0, HALF_UP));
+        assertEquals(FixedDecimal.NAN, PRICE.multiplyByInteger(Long.MAX_VALUE, 2));
+        assertEquals(FixedDecimal.NAN, PRICE.multiplyByInteger(FixedDecimal.NAN, 0));
+        assertEquals(FixedDecimal.NAN, PRICE.multiplyByInteger(FixedDecimal.NAN, 1));
+        assertEquals(-Long.MAX_VALUE, PRICE.multiplyByInteger(Long.MAX_VALUE, -1));
+
+        final MutableFixed64<Notional> notional = MutableFixed64.valueOf(NOTIONAL, "100", HALF_UP);
+        assertEquals("300.00", notional.multiplyByInteger(3).toString());
+        assertEquals("42.86", notional.divideByInteger(7, HALF_UP).toString());
+
+        final SplittableRandom random = new SplittableRandom(58);
+        for (final DecimalRounding mode : DecimalRounding.values()) {
+            final DecimalContext context = DecimalContext.of(mode);
+            for (int i = 0; i < 50_000; i++) {
+                final FixedDecimal<?> scale = randomScale(random);
+                final long a = randomValue(random);
+                final long integer = random.nextInt(20) == 0 ? random.nextInt(-1, 2) :
+                    random.nextLong() >> random.nextInt(1, Long.SIZE);
+                final long product = expected(() -> BigInteger.valueOf(a).multiply(BigInteger.valueOf(integer)), a, 0);
+                assertEquals(product, scale.multiplyByInteger(a, integer), () -> a + " * " + integer);
+                final long quotient = integer == 0 ? FixedDecimal.NAN : expected(() -> scale.toBigDecimal(a)
+                    .divide(BigDecimal.valueOf(integer), scale.decimals(), mode.toRoundingMode()), a, 0);
+                assertEquals(quotient, scale.divideByInteger(a, integer, context), () -> mode + " " +
+                    scale.toString(a) + " / " + integer);
+            }
+        }
+    }
+
+    @Test
+    public void floorCeilAndRemainder() {
+        final long price = PRICE.valueOf("101.25", HALF_UP);
+        assertEquals("101.00000000", PRICE.toString(PRICE.floor(price)));
+        assertEquals("102.00000000", PRICE.toString(PRICE.ceil(price)));
+        assertEquals("-102.00000000", PRICE.toString(PRICE.floor(-price)));
+        assertEquals("-101.00000000", PRICE.toString(PRICE.ceil(-price)));
+        assertEquals(PRICE.valueOf("101", HALF_UP), PRICE.floor(PRICE.valueOf("101", HALF_UP)));
+        assertEquals(FixedDecimal.NAN, PRICE.floor(FixedDecimal.NAN));
+        assertEquals(FixedDecimal.NAN, QTY.ceil(Long.MAX_VALUE));
+        assertEquals(Long.MAX_VALUE, FixedDecimal.of(0).ceil(Long.MAX_VALUE));
+
+        assertEquals("1.25", QTY.toString(QTY.remainder(QTY.valueOf("10.25", HALF_UP), QTY.valueOf("3", HALF_UP))));
+        assertEquals("-1.25", QTY.toString(QTY.remainder(QTY.valueOf("-10.25", HALF_UP), QTY.valueOf("3", HALF_UP))));
+        assertEquals("1.25", QTY.toString(QTY.remainder(QTY.valueOf("10.25", HALF_UP), QTY.valueOf("-3", HALF_UP))));
+        assertEquals(FixedDecimal.NAN, QTY.remainder(1, 0));
+        assertEquals(FixedDecimal.NAN, QTY.remainder(FixedDecimal.NAN, 1));
+        assertEquals(FixedDecimal.NAN, QTY.remainder(1, FixedDecimal.NAN));
+
+        final MutableFixed64<Price> typed = MutableFixed64.fromRaw(PRICE, price);
+        assertEquals("101.00000000", typed.floor().toString());
+        assertEquals("101.00000000", typed.ceil().toString());
+        assertEquals("1.00000000", typed.remainder(MutableFixed64.valueOf(PRICE, "2", HALF_UP)).toString());
+        assertThrows(IllegalArgumentException.class, () -> typed.remainder(
+            MutableFixed64.valueOf(FixedDecimal.<Price>of(2), "2", HALF_UP)));
+
+        final SplittableRandom random = new SplittableRandom(60);
+        for (int i = 0; i < 200_000; i++) {
+            final FixedDecimal<?> scale = randomScale(random);
+            final long a = randomValue(random);
+            final long b = random.nextBoolean() ? randomValue(random) : random.nextLong(-1000, 1000);
+            final int decimals = scale.decimals();
+            assertEquals(expected(() -> scale.toBigDecimal(a).setScale(0, RoundingMode.FLOOR).setScale(decimals), a, 0),
+                scale.floor(a), () -> "floor " + scale.toString(a));
+            assertEquals(expected(() -> scale.toBigDecimal(a).setScale(0, RoundingMode.CEILING).setScale(decimals), a, 0),
+                scale.ceil(a), () -> "ceil " + scale.toString(a));
+            final long remainder = b == 0 ? FixedDecimal.NAN :
+                expected(() -> scale.toBigDecimal(a).remainder(scale.toBigDecimal(b)), a, b);
+            assertEquals(remainder, scale.remainder(a, b), () -> scale.toString(a) + " % " + scale.toString(b));
+        }
+    }
+
+    @Test
+    public void rounds() {
+        final long price = PRICE.valueOf("101.256", HALF_UP);
+        assertEquals("101.26000000", PRICE.toString(PRICE.round(price, 2, HALF_UP)));
+        assertEquals("100.00000000", PRICE.toString(PRICE.round(price, -1, HALF_UP)));
+        assertEquals(price, PRICE.round(price, 8, HALF_UP));
+        assertEquals(price, PRICE.round(price, 12, HALF_UP));
+        assertEquals(FixedDecimal.NAN, PRICE.round(price, 8 - 19, HALF_UP));
+        assertEquals(9_223_372_036_854_775_800L, QTY.round(Long.MAX_VALUE, 0, HALF_UP));
+        assertEquals(FixedDecimal.NAN, QTY.round(Long.MAX_VALUE, 1, HALF_UP)); // ...758.10 overflows
+        assertEquals(FixedDecimal.NAN, PRICE.round(price, 2, DecimalContext.UNNECESSARY));
+
+        final long tick = PRICE.valueOf("0.05", HALF_UP);
+        assertEquals("101.25000000", PRICE.toString(PRICE.roundToIncrement(price, tick, HALF_UP)));
+        assertEquals("101.30000000", PRICE.toString(PRICE.roundToIncrement(price, tick,
+            DecimalContext.CEILING)));
+        assertEquals("-101.25000000", PRICE.toString(PRICE.roundToIncrement(-price, tick, HALF_UP)));
+        assertEquals(FixedDecimal.NAN, PRICE.roundToIncrement(price, 0, HALF_UP));
+        assertEquals(FixedDecimal.NAN, PRICE.roundToIncrement(price, -tick, HALF_UP));
+        assertEquals(FixedDecimal.NAN, PRICE.roundToIncrement(Long.MAX_VALUE, 1L << 62, HALF_UP)); // 2^63
+
+        final MutableFixed64<Price> typed = MutableFixed64.fromRaw(PRICE, price);
+        assertEquals("101.26000000", typed.round(2, HALF_UP).toString());
+        assertEquals("101.25000000", typed.roundToIncrement(MutableFixed64.fromRaw(PRICE, tick),
+            DecimalContext.FLOOR).toString());
+        assertThrows(IllegalArgumentException.class, () -> typed.roundToIncrement(
+            MutableFixed64.valueOf(FixedDecimal.<Price>of(2), "0.05", HALF_UP), HALF_UP));
+
+        final SplittableRandom random = new SplittableRandom(59);
+        for (final DecimalRounding mode : DecimalRounding.values()) {
+            final DecimalContext context = DecimalContext.of(mode);
+            for (int i = 0; i < 50_000; i++) {
+                final FixedDecimal<?> scale = randomScale(random);
+                final long a = randomValue(random);
+                final int places = random.nextInt(scale.decimals() - 20, scale.decimals() + 2);
+                final long rounded = places >= scale.decimals() ? a : places < scale.decimals() - 18 ?
+                    FixedDecimal.NAN : expected(() -> scale.toBigDecimal(a).setScale(places, mode.toRoundingMode())
+                    .setScale(scale.decimals()), a, 0);
+                assertEquals(rounded, scale.round(a, places, context), () -> mode + " " + scale.toString(a) +
+                    " to " + places + " places");
+
+                final long increment = random.nextInt(20) == 0 ? random.nextLong(-1, 1) :
+                    random.nextLong(1, 1L << random.nextInt(1, Long.SIZE - 1));
+                final long multiple = increment <= 0 ? FixedDecimal.NAN : expected(() -> new BigDecimal(a)
+                    .divide(BigDecimal.valueOf(increment), 0, mode.toRoundingMode()).toBigIntegerExact()
+                    .multiply(BigInteger.valueOf(increment)), a, 0);
+                assertEquals(multiple, scale.roundToIncrement(a, increment, context), () -> mode + " " + a +
+                    " to a multiple of " + increment);
+            }
+        }
     }
 
     /**

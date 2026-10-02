@@ -29,7 +29,7 @@ public class MutableDecimal64Test {
     public void multiply64() {
         MutableDecimal64 value = MutableDecimal64.valueOf(1000_00000L, -5);
         MutableDecimal64 factor = MutableDecimal64.valueOf(123_50, -2);
-        value.multiply(factor, new DecimalContext(DecimalRounding.HALF_UP));
+        value.multiply(factor, DecimalContext.HALF_UP);
         assertEquals(12_350_000_000L, value.mantissa());
         assertEquals(-5, value.exponent());
     }
@@ -38,7 +38,7 @@ public class MutableDecimal64Test {
     public void multiply128() {
         MutableDecimal64 value = MutableDecimal64.valueOf(12_310_00000, -5);
         MutableDecimal64 factor = MutableDecimal64.valueOf(15, 7);
-        value.multiply(factor, new DecimalContext(DecimalRounding.HALF_UP));
+        value.multiply(factor, DecimalContext.HALF_UP);
         assertEquals(184650000000000000L, value.mantissa());
         assertEquals(-5, value.exponent());
     }
@@ -47,7 +47,7 @@ public class MutableDecimal64Test {
     public void divide64() {
         MutableDecimal64 value = MutableDecimal64.valueOf(1125_00000L, -5);
         MutableDecimal64 factor = MutableDecimal64.valueOf(112_50, -2);
-        value.divide(factor, new DecimalContext(DecimalRounding.HALF_UP));
+        value.divide(factor, DecimalContext.HALF_UP);
         assertEquals(1_000_000L, value.mantissa());
         assertEquals(-5, value.exponent());
     }
@@ -56,7 +56,7 @@ public class MutableDecimal64Test {
     public void divide128() {
         MutableDecimal64 value = MutableDecimal64.valueOf(1231231231, -5);
         MutableDecimal64 factor = MutableDecimal64.valueOf(12334, 2);
-        value.divide(factor, new DecimalContext(DecimalRounding.HALF_UP));
+        value.divide(factor, DecimalContext.HALF_UP);
         assertEquals(998, value.mantissa());
         assertEquals(-5, value.exponent());
     }

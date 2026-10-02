@@ -3,17 +3,36 @@ package org.limitless.fixdec4j;
 import java.math.BigDecimal;
 
 /**
- * This class implements an immutable fixed decimal number, see the DecimalFlyweight for details.
+ * An immutable decimal of 64 bits, where each value stores its number of decimals (0 - 7), see
+ * {@link Decimal64Flyweight} for the representation and limits. Every operation returns a new
+ * instance; a result that cannot be represented, an invalid string or a division by zero is NAN,
+ * which propagates through further operations:
+ * <pre>
+ * Decimal64 price = Decimal64.valueOf("101.25");
+ * Decimal64 total = price.multiply(Decimal64.valueOf("3"), DecimalContext.HALF_UP); // 303.75
+ * Decimal64 third = Decimal64.valueOf("1").divide(Decimal64.valueOf("3"), DecimalContext.HALF_UP);    // 0
+ * Decimal64 exact = Decimal64.valueOf("1.00").divide(Decimal64.valueOf("3"), DecimalContext.HALF_UP); // 0.33
+ * if (total.isNaN()) { ... }
+ * </pre>
+ * Multiply and divide round to the largest number of decimals of the operands, so an integer
+ * divided by an integer is an integer.
  * @author fredrikdahlberg
  */
 public final class Decimal64 implements Comparable<Decimal64> {
+    /** Largest mantissa, 2^60 - 1. */
     public static final long MANTISSA_MAX = Decimal64Flyweight.MANTISSA_MAX;
+    /** Smallest mantissa, -2^60 + 2. */
     public static final long MANTISSA_MIN = Decimal64Flyweight.MANTISSA_MIN;
+    /** Mantissa of NaN, -2^60 + 1. */
     public static final long MANTISSA_ERROR = Decimal64Flyweight.MANTISSA_ERROR;
 
+    /** Largest value, MANTISSA_MAX with no decimals. */
     public static final Decimal64 MAX_VALUE = new Decimal64(Decimal64Flyweight.MAX_VALUE);
+    /** Smallest value, MANTISSA_MIN with no decimals. */
     public static final Decimal64 MIN_VALUE = new Decimal64(Decimal64Flyweight.MIN_VALUE);
+    /** Zero with no decimals. */
     public static final Decimal64 ZERO = new Decimal64(0);
+    /** Not a number, the result of an overflow, an invalid string or a division by zero. */
     public static final Decimal64 NAN = new Decimal64(Decimal64Flyweight.NAN);
 
     private final long fixedDecimal;
@@ -40,40 +59,47 @@ public final class Decimal64 implements Comparable<Decimal64> {
     }
 
     /**
-     * Constructs an immutable decimal from a scaled mantissa and an exponent.
+     * Returns an immutable decimal from a scaled mantissa and an exponent, e.g. 12345 and -2 for
+     * 123.45. A positive exponent scales the mantissa, e.g. 123 and 2 is 12300 with no decimals.
      * @param scaledMantissa scaled mantissa
-     * @param exponent       exponent
-     * @return decimal instance
+     * @param exponent       exponent, -Decimal64Flyweight.DECIMALS_MAX to Decimal64Flyweight.EXPONENT_MAX
+     * @return new decimal, or NAN for an exponent out of range or overflow
      */
     public static Decimal64 valueOf(final long scaledMantissa, final int exponent) {
         return new Decimal64(scaledMantissa, exponent);
     }
 
     /**
-     * Constructs an immutable decimal value from a string.
-     * @param value string
-     * @return new mutable decimal instance
+     * Returns an immutable decimal parsed from a plain decimal string, e.g. "-123.45". The number of
+     * decimals is kept, e.g. "1.50" has two. A sign other than a leading '-', a leading or trailing
+     * point, exponent notation and more than Decimal64Flyweight.DECIMALS_MAX decimals are not
+     * supported, see FixedDecimal for a lenient parser that rounds.
+     * @param value decimal string
+     * @return new decimal, or NAN for null, an invalid string, too many decimals or overflow
      */
     public static Decimal64 valueOf(final String value) {
         return new Decimal64(Decimal64Flyweight.valueOf(value));
     }
 
     /**
-     * Constructs an immutable decimal value from a double.
+     * Returns an immutable decimal from a double, rounded half away from zero to a number of
+     * decimals, e.g. valueOf(-2.5, 0) is -3. The double is rounded as stored, so 1.005, which
+     * is slightly below 1.005 as a double, rounds to 1.00 with two decimals.
      * @param value    double
-     * @param decimals number of decimals
-     * @return new mutable decimal instance
+     * @param decimals number of decimals, 0 to Decimal64Flyweight.DECIMALS_MAX
+     * @return new decimal, or NAN for a NaN or infinite double, decimals out of range or overflow
      */
     public static Decimal64 valueOf(final double value, final int decimals) {
         return new Decimal64(Decimal64Flyweight.valueOf(value, decimals));
     }
 
     /**
-     * Constructs an immutable decimal value from a BigDecimal, rounded to at most
-     * Decimal64Flyweight.DECIMALS_MAX decimals according to the rounding mode.
+     * Returns an immutable decimal from a BigDecimal. The number of decimals is kept, but a value with
+     * more than Decimal64Flyweight.DECIMALS_MAX decimals is rounded to that many according to the
+     * rounding mode.
      * @param value   BigDecimal
      * @param context rounding mode
-     * @return new decimal instance, NAN indicating overflow or an inexact result with UNNECESSARY
+     * @return new decimal, or NAN for overflow or an inexact result with UNNECESSARY
      */
     public static Decimal64 valueOf(final BigDecimal value, final DecimalContext context) {
         return new Decimal64(Decimal64Flyweight.valueOf(value, context));
@@ -89,18 +115,13 @@ public final class Decimal64 implements Comparable<Decimal64> {
     }
 
     /**
-     * Indicates whether some other object is equal to this one.
+     * Indicates whether another object is a Decimal64 of the same numeric value, e.g. 1.0 equals
+     * 1.00, consistent with compareTo and hashCode. NaN equals NaN.
      * @param object other object
      */
     @Override
-    public boolean equals(Object object) {
-        if (this == object) {
-            return true;
-        }
-        if (object == null || getClass() != object.getClass()) {
-            return false;
-        }
-        return fixedDecimal == ((Decimal64) object).fixedDecimal;
+    public boolean equals(final Object object) {
+        return object instanceof Decimal64 other && Decimal64Flyweight.equals(fixedDecimal, other.fixedDecimal);
     }
 
     /**
@@ -116,12 +137,10 @@ public final class Decimal64 implements Comparable<Decimal64> {
      * Compares this object with the specified object for order.
      * @param value other object
      * @return less than (-1), equals (0) or greater than (1) the other object
+     * @throws NullPointerException if the other object is null
      */
     @Override
     public int compareTo(final Decimal64 value) {
-        if (value == null) {
-            return 1;
-        }
         return Decimal64Flyweight.compareTo(fixedDecimal, value.fixedDecimal);
     }
 
@@ -223,9 +242,76 @@ public final class Decimal64 implements Comparable<Decimal64> {
     }
 
     /**
+     * Returns this value times an integer, exact, with the decimals of this value.
+     * @param integer integer factor
+     * @return product, NaN on overflow
+     */
+    public Decimal64 multiplyByInteger(final long integer) {
+        return new Decimal64(Decimal64Flyweight.multiplyByInteger(fixedDecimal, integer));
+    }
+
+    /**
+     * Returns this value divided by an integer, rounded to the decimals of this value.
+     * @param integer integer divisor
+     * @param context rounding mode
+     * @return quotient, NaN on division by zero
+     */
+    public Decimal64 divideByInteger(final long integer, final DecimalContext context) {
+        return new Decimal64(Decimal64Flyweight.divideByInteger(fixedDecimal, integer, context));
+    }
+
+    /**
+     * Returns this value rounded to a multiple of a positive increment, e.g. a tick size, with the
+     * largest number of decimals of the two.
+     * @param increment positive increment
+     * @param context   rounding mode
+     * @return rounded value, NaN on overflow or an increment that is not positive
+     */
+    public Decimal64 roundToIncrement(final Decimal64 increment, final DecimalContext context) {
+        return new Decimal64(Decimal64Flyweight.roundToIncrement(fixedDecimal, increment.fixedDecimal, context));
+    }
+
+    /**
+     * Returns the largest integer not above this value, with no decimals.
+     * @return integer value
+     */
+    public Decimal64 floor() {
+        return new Decimal64(Decimal64Flyweight.floor(fixedDecimal));
+    }
+
+    /**
+     * Returns the smallest integer not below this value, with no decimals.
+     * @return integer value
+     */
+    public Decimal64 ceil() {
+        return new Decimal64(Decimal64Flyweight.ceil(fixedDecimal));
+    }
+
+    /**
+     * Returns the remainder of dividing this value by a divisor, exact, with the sign of this value.
+     * @param divisor divisor
+     * @return remainder, NaN on division by zero
+     */
+    public Decimal64 remainder(final Decimal64 divisor) {
+        return new Decimal64(Decimal64Flyweight.remainder(fixedDecimal, divisor.fixedDecimal));
+    }
+
+    /**
+     * Writes this value as ASCII like toString, without allocating.
+     * @param bytes  buffer
+     * @param offset index of the first byte
+     * @return number of bytes written, at most Decimal64Flyweight.STRING_LENGTH_MAX
+     * @throws IndexOutOfBoundsException if the string does not fit in the buffer
+     */
+    public int toBytes(final byte[] bytes, final int offset) {
+        return Decimal64Flyweight.toBytes(fixedDecimal, bytes, offset);
+    }
+
+    /**
      * Returns the value of the specified number as a byte, which may involve rounding or truncation.
      * @param context rounding mode
      * @return byte value
+     * @throws ArithmeticException if this instance is NaN
      */
     public byte byteValue(final DecimalContext context) {
         return Decimal64Flyweight.byteValue(fixedDecimal, context);
@@ -235,6 +321,7 @@ public final class Decimal64 implements Comparable<Decimal64> {
      * Returns the value of the specified number as a short, which may involve rounding or truncation.
      * @param context rounding mode
      * @return short value
+     * @throws ArithmeticException if this instance is NaN
      */
     public short shortValue(DecimalContext context) {
         return Decimal64Flyweight.shortValue(fixedDecimal, context);
@@ -244,14 +331,17 @@ public final class Decimal64 implements Comparable<Decimal64> {
      * Returns the value of the specified number as an integer, which may involve rounding or truncation.
      * @param context rounding mode
      * @return integer value
+     * @throws ArithmeticException if this instance is NaN
      */
     public int intValue(DecimalContext context) {
         return Decimal64Flyweight.intValue(fixedDecimal, context);
     }
 
     /**
-     * Returns the value of the specified number as an integer, which may involve rounding or truncation.
+     * Returns the value of the specified number as a long, which may involve rounding or truncation.
+     * @param context rounding mode
      * @return long value
+     * @throws ArithmeticException if this instance is NaN
      */
     public long longValue(DecimalContext context) {
         return Decimal64Flyweight.longValue(fixedDecimal, context);

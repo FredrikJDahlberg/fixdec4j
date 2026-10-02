@@ -2,12 +2,29 @@ package org.limitless.fixdec4j;
 
 import org.junit.jupiter.api.Test;
 
+import java.math.BigDecimal;
+import java.math.BigInteger;
+import java.math.RoundingMode;
+import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
+import java.util.SplittableRandom;
+import java.util.function.Supplier;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class Decimal64FlyweightTest {
 
-    DecimalContext context = new DecimalContext(DecimalRounding.HALF_UP);
+    DecimalContext context = DecimalContext.HALF_UP;
+
+    @Test
+    public void nanParts() {
+        assertEquals(Decimal64Flyweight.MANTISSA_ERROR, Decimal64Flyweight.mantissa(Decimal64Flyweight.NAN));
+        assertEquals(0, Decimal64Flyweight.exponent(Decimal64Flyweight.NAN));
+        assertEquals(false, Decimal64Flyweight.isZero(Decimal64Flyweight.NAN));
+    }
 
     @Test
     public void toStrings() {
@@ -132,7 +149,7 @@ public class Decimal64FlyweightTest {
 
     @Test
     public void divideRoundsDown() {
-        final DecimalContext down = new DecimalContext(DecimalRounding.DOWN);
+        final DecimalContext down = DecimalContext.DOWN;
         final long result = Decimal64Flyweight.divide(Decimal64Flyweight.valueOf(2, 0), Decimal64Flyweight.valueOf(3, 0), down);
         assertEquals(0, Decimal64Flyweight.mantissa(result));
         final long tie = Decimal64Flyweight.divide(Decimal64Flyweight.valueOf(-3, -2), Decimal64Flyweight.valueOf(2, 0), down);
@@ -209,5 +226,187 @@ public class Decimal64FlyweightTest {
         assertNotEquals(Decimal64Flyweight.NAN, value);
         assertNotEquals(Decimal64Flyweight.NAN, factor);
         assertEquals(Decimal64Flyweight.NAN, Decimal64Flyweight.divide(value, factor, context));
+    }
+
+    private static final long NAN = Decimal64Flyweight.NAN;
+
+    private static long decimal(final String value) {
+        return Decimal64Flyweight.valueOf(value);
+    }
+
+    private static String string(final long value) {
+        return Decimal64Flyweight.toString(value);
+    }
+
+    @Test
+    public void integerArithmetic() {
+        assertEquals("1012.50", string(Decimal64Flyweight.multiplyByInteger(decimal("101.25"), 10)));
+        assertEquals("33.75", string(Decimal64Flyweight.divideByInteger(decimal("101.25"), 3, context)));
+        assertEquals("0.6667", string(Decimal64Flyweight.divideByInteger(decimal("2.0000"), 3, context)));
+        assertEquals("1", string(Decimal64Flyweight.divideByInteger(decimal("2"), 3, context)));
+        assertEquals(NAN, Decimal64Flyweight.divideByInteger(decimal("1"), 0, context));
+        assertEquals(NAN, Decimal64Flyweight.divideByInteger(decimal("1"), Long.MIN_VALUE, context));
+        assertEquals(NAN, Decimal64Flyweight.multiplyByInteger(Decimal64Flyweight.MAX_VALUE, 2));
+        assertEquals(NAN, Decimal64Flyweight.multiplyByInteger(NAN, 0));
+    }
+
+    @Test
+    public void roundsToIncrementFloorAndCeil() {
+        final long price = decimal("101.256");
+        assertEquals("101.250", string(Decimal64Flyweight.roundToIncrement(price, decimal("0.05"), context)));
+        assertEquals("101.300", string(Decimal64Flyweight.roundToIncrement(price, decimal("0.1"), context)));
+        assertEquals("-101.250", string(Decimal64Flyweight.roundToIncrement(Decimal64Flyweight.minus(price),
+            decimal("0.05"), context)));
+        assertEquals(NAN, Decimal64Flyweight.roundToIncrement(price, decimal("0"), context));
+        assertEquals(NAN, Decimal64Flyweight.roundToIncrement(price, decimal("-0.05"), context));
+
+        assertEquals("101", string(Decimal64Flyweight.floor(price)));
+        assertEquals("102", string(Decimal64Flyweight.ceil(price)));
+        assertEquals("-102", string(Decimal64Flyweight.floor(Decimal64Flyweight.minus(price))));
+        assertEquals("-101", string(Decimal64Flyweight.ceil(Decimal64Flyweight.minus(price))));
+        assertEquals(NAN, Decimal64Flyweight.floor(NAN));
+
+        assertEquals("1.25", string(Decimal64Flyweight.remainder(decimal("10.25"), decimal("3"))));
+        assertEquals("-1.25", string(Decimal64Flyweight.remainder(decimal("-10.25"), decimal("3"))));
+        assertEquals("0.100", string(Decimal64Flyweight.remainder(decimal("10.1"), decimal("0.125"))));
+        assertEquals(NAN, Decimal64Flyweight.remainder(decimal("1"), decimal("0.00")));
+    }
+
+    @Test
+    public void writesBytes() {
+        final byte[] message = "44=".getBytes(StandardCharsets.ISO_8859_1);
+        final byte[] buffer = Arrays.copyOf(message, 32);
+        final int length = Decimal64Flyweight.toBytes(decimal("-101.25"), buffer, 3);
+        assertEquals("44=-101.25", new String(buffer, 0, 3 + length, StandardCharsets.ISO_8859_1));
+        assertToBytes(NAN);
+        assertToBytes(Decimal64Flyweight.MAX_VALUE);
+        assertToBytes(Decimal64Flyweight.MIN_VALUE);
+        assertThrows(IndexOutOfBoundsException.class, () -> Decimal64Flyweight.toBytes(decimal("1"), buffer, 32));
+    }
+
+    private static void assertToBytes(final long value) {
+        final String string = string(value);
+        final int offset = (int) (value & 7);
+        final byte[] buffer = new byte[offset + string.length() + 3];
+        Arrays.fill(buffer, (byte) '#');
+        final int length = Decimal64Flyweight.toBytes(value, buffer, offset);
+        assertEquals(string, new String(buffer, offset, length, StandardCharsets.ISO_8859_1));
+        assertTrue(length <= Decimal64Flyweight.STRING_LENGTH_MAX);
+        for (int i = 0; i < buffer.length; i++) {
+            if (i < offset || i >= offset + length) {
+                assertEquals('#', buffer[i], string + " wrote outside its range at " + i);
+            }
+        }
+        assertThrows(IndexOutOfBoundsException.class, () -> Decimal64Flyweight.toBytes(value, new byte[length - 1], 0));
+    }
+
+    @Test
+    public void newOperationsMatchBigDecimal() {
+        final SplittableRandom random = new SplittableRandom(61);
+        for (int i = 0; i < 100_000; i++) {
+            assertToBytes(randomDecimal(random));
+        }
+        for (final DecimalRounding mode : DecimalRounding.values()) {
+            final DecimalContext context = DecimalContext.of(mode);
+            final RoundingMode roundingMode = mode.toRoundingMode();
+            for (int i = 0; i < 50_000; i++) {
+                final long a = randomDecimal(random);
+                final long b = randomDecimal(random);
+                final long integer = random.nextInt(20) == 0 ? random.nextInt(-1, 2) :
+                    random.nextLong() >> random.nextInt(1, Long.SIZE);
+                final String operands = mode + " " + string(a) + ", " + string(b) + ", " + integer;
+
+                assertEquals(expected(() -> big(a).multiply(BigDecimal.valueOf(integer)), a),
+                    Decimal64Flyweight.multiplyByInteger(a, integer), operands);
+                assertEquals(integer == 0 || integer == Long.MIN_VALUE ? NAN : expected(() ->
+                    big(a).divide(BigDecimal.valueOf(integer), big(a).scale(), roundingMode), a),
+                    Decimal64Flyweight.divideByInteger(a, integer, context), operands);
+                assertEquals(b != NAN && Decimal64Flyweight.mantissa(b) <= 0 ? NAN : expected(() ->
+                    big(a).divide(big(b), 0, roundingMode).multiply(big(b))
+                        .setScale(Math.max(big(a).scale(), big(b).scale())), a, b),
+                    Decimal64Flyweight.roundToIncrement(a, b, context), operands);
+                assertEquals(b != NAN && Decimal64Flyweight.isZero(b) ? NAN : expected(() ->
+                    big(a).remainder(big(b)).setScale(Math.max(big(a).scale(), big(b).scale())), a, b),
+                    Decimal64Flyweight.remainder(a, b), operands);
+            }
+        }
+        for (int i = 0; i < 100_000; i++) {
+            final long a = randomDecimal(random);
+            assertEquals(expected(() -> big(a).setScale(0, RoundingMode.FLOOR), a), Decimal64Flyweight.floor(a),
+                () -> "floor " + string(a));
+            assertEquals(expected(() -> big(a).setScale(0, RoundingMode.CEILING), a), Decimal64Flyweight.ceil(a),
+                () -> "ceil " + string(a));
+        }
+    }
+
+    /**
+     * Returns a random value of 0 to 7 decimals and random magnitude, sometimes NaN or zero.
+     */
+    private static long randomDecimal(final SplittableRandom random) {
+        final int kind = random.nextInt(100);
+        if (kind == 0) {
+            return NAN;
+        }
+        final long mantissa = kind == 1 ? 0 : random.nextLong() >> random.nextInt(3, Long.SIZE);
+        final long value = Decimal64Flyweight.valueOf(mantissa, -random.nextInt(Decimal64Flyweight.DECIMALS_MAX + 1));
+        return value == NAN ? 0 : value; // the two mantissas out of range
+    }
+
+    private static BigDecimal big(final long value) {
+        return Decimal64Flyweight.toBigDecimal(value);
+    }
+
+    /**
+     * Returns the decimal flyweight of an exact result, or NaN when an operand is NaN, the result is
+     * inexact with UNNECESSARY or out of range.
+     */
+    private static long expected(final Supplier<BigDecimal> result, final long... operands) {
+        for (final long operand : operands) {
+            if (operand == NAN) {
+                return NAN;
+            }
+        }
+        final BigDecimal value;
+        try {
+            value = result.get();
+        } catch (final ArithmeticException e) {
+            return NAN;
+        }
+        assertTrue(value.scale() >= 0 && value.scale() <= Decimal64Flyweight.DECIMALS_MAX, value::toString);
+        final BigInteger mantissa = value.unscaledValue();
+        if (mantissa.compareTo(BigInteger.valueOf(Decimal64Flyweight.MANTISSA_MIN)) < 0 ||
+            mantissa.compareTo(BigInteger.valueOf(Decimal64Flyweight.MANTISSA_MAX)) > 0) {
+            return NAN;
+        }
+        return Decimal64Flyweight.valueOf(mantissa.longValue(), -value.scale());
+    }
+
+    @Test
+    public void numericEquality() {
+        assertEquals(decimal("1.5"), Decimal64Flyweight.stripTrailingZeros(decimal("1.500")));
+        assertEquals(decimal("0"), Decimal64Flyweight.stripTrailingZeros(decimal("0.00")));
+        assertEquals(decimal("-120"), Decimal64Flyweight.stripTrailingZeros(decimal("-120.0000000")));
+        assertEquals(NAN, Decimal64Flyweight.stripTrailingZeros(NAN));
+        assertTrue(Decimal64Flyweight.equals(decimal("1.0"), decimal("1.00")));
+        assertTrue(Decimal64Flyweight.equals(NAN, NAN));
+        assertEquals(false, Decimal64Flyweight.equals(NAN, decimal("0")));
+        assertEquals(false, Decimal64Flyweight.equals(decimal("1.0"), decimal("1.01")));
+
+        // equals agrees with compareTo, and equal values have equal hash codes
+        final SplittableRandom random = new SplittableRandom(62);
+        for (int i = 0; i < 500_000; i++) {
+            final long a = randomDecimal(random);
+            // b is often a with another number of decimals
+            final long b = random.nextBoolean() ? randomDecimal(random) :
+                Decimal64Flyweight.round(a, random.nextInt(Decimal64Flyweight.DECIMALS_MAX + 1), context);
+            final boolean equal = Decimal64Flyweight.compareTo(a, b) == 0;
+            assertEquals(equal, Decimal64Flyweight.equals(a, b), () -> string(a) + " and " + string(b));
+            if (equal) {
+                assertEquals(Decimal64Flyweight.hashCode(a), Decimal64Flyweight.hashCode(b));
+            }
+            if (a != NAN && b != NAN) {
+                assertEquals(big(a).compareTo(big(b)) == 0, equal, () -> string(a) + " and " + string(b));
+            }
+        }
     }
 }

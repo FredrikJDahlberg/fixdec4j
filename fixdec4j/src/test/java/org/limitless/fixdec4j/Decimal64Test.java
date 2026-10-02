@@ -3,12 +3,16 @@ package org.limitless.fixdec4j;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
+import java.nio.charset.StandardCharsets;
+import java.util.HashSet;
+import java.util.List;
+
 import static org.junit.jupiter.api.Assertions.*;
 
 public class Decimal64Test {
 
-    private static final DecimalContext IMMUTABLE = new DecimalContext(DecimalRounding.HALF_UP);
-    private static final DecimalContext MUTABLE = new DecimalContext(DecimalRounding.HALF_UP);
+    private static final DecimalContext IMMUTABLE = DecimalContext.HALF_UP;
+    private static final DecimalContext MUTABLE = DecimalContext.HALF_UP;
 
 	private static long of(final long mantissa, final int exponent) {
 		return Decimal64Flyweight.valueOf(mantissa, exponent);
@@ -148,16 +152,31 @@ public class Decimal64Test {
 		assertEquals(0, decimal5.exponent());
 
 		assertTrue(new MutableDecimal64(1, 50).isNaN());
-		final MutableDecimal64 value = new MutableDecimal64().fromLongBits(0);
-		assertEquals(MutableDecimal64.ZERO, value);
+		final MutableDecimal64 value = MutableDecimal64.fromLongBits(0);
+		assertEquals(MutableDecimal64.zero(), value);
 		assertEquals(Decimal64.ZERO, Decimal64.fromLongBits(0));
 		assertTrue(new Decimal64(1, 50).isNaN());
 
 		assertEquals(Decimal64.ZERO, new Decimal64(Decimal64.ZERO));
 		assertEquals(Decimal64.NAN, new Decimal64(Decimal64.NAN));
 
-		assertEquals(MutableDecimal64.ZERO, new MutableDecimal64(MutableDecimal64.ZERO));
-		assertEquals(MutableDecimal64.NAN, new MutableDecimal64(MutableDecimal64.NAN));
+		assertEquals(MutableDecimal64.zero(), new MutableDecimal64(MutableDecimal64.zero()));
+		assertEquals(MutableDecimal64.nan(), new MutableDecimal64(MutableDecimal64.nan()));
+
+		// each factory call is a new instance, so changing one does not change the next
+		MutableDecimal64.zero().add(MutableDecimal64.valueOf(1, 0));
+		assertTrue(MutableDecimal64.zero().isZero());
+		assertNotSame(MutableDecimal64.nan(), MutableDecimal64.nan());
+		assertEquals(Decimal64Flyweight.MAX_VALUE, MutableDecimal64.maxValue().toLongBits());
+		assertEquals(Decimal64Flyweight.MIN_VALUE, MutableDecimal64.minValue().toLongBits());
+		assertEquals(Decimal64Flyweight.MANTISSA_MIN, Decimal64.MIN_VALUE.mantissa());
+		assertEquals(0, Decimal64.MIN_VALUE.exponent());
+		// the negated largest mantissa is the NaN mantissa, so the range is one smaller below zero
+		assertTrue(Decimal64.MAX_VALUE.minus().isNaN());
+		assertEquals(Decimal64.MAX_VALUE.subtract(Decimal64.valueOf(1, 0)), Decimal64.MIN_VALUE.minus());
+		// every value with the smallest mantissa is at least MIN_VALUE
+		assertTrue(Decimal64.valueOf(Decimal64.MANTISSA_MIN, -Decimal64Flyweight.DECIMALS_MAX).compareTo(Decimal64.MIN_VALUE) > 0);
+		assertTrue(Decimal64.MIN_VALUE.subtract(Decimal64.valueOf(1, 0)).isNaN());
 
 		assertEquals(Decimal64Flyweight.NAN, Decimal64Flyweight.valueOf(1, -8));
 		assertEquals(Decimal64Flyweight.NAN, Decimal64Flyweight.valueOf(Decimal64Flyweight.MANTISSA_MAX, 3));
@@ -226,7 +245,7 @@ public class Decimal64Test {
 
 		assertEquals(MutableDecimal64.valueOf(-1, 2), MutableDecimal64.valueOf(1, 2).minus());
 		assertEquals(MutableDecimal64.valueOf(1, 2), MutableDecimal64.valueOf(-1, 2).minus());
-		assertEquals(MutableDecimal64.NAN, MutableDecimal64.NAN.minus());
+		assertEquals(MutableDecimal64.nan(), MutableDecimal64.nan().minus());
 	}
 
 	@Test
@@ -351,15 +370,15 @@ public class Decimal64Test {
 
 	@Test
 	public void checkCompareTo() {
-		assertEquals(1, new Decimal64(0, 0).compareTo(null));
+		assertThrows(NullPointerException.class, () -> new Decimal64(0, 0).compareTo(null));
 		assertEquals(-1, new Decimal64(-1, 0).compareTo(Decimal64.ZERO));
 		assertEquals(0, new Decimal64(0, 0).compareTo(Decimal64.ZERO));
 		assertEquals(1, new Decimal64(1, 0).compareTo(Decimal64.ZERO));
 
-		assertEquals(1, new MutableDecimal64(0, 0).compareTo(null));
-		assertEquals(-1, new MutableDecimal64(-1, 0).compareTo(MutableDecimal64.ZERO));
-		assertEquals(0, new MutableDecimal64(0, 0).compareTo(MutableDecimal64.ZERO));
-		assertEquals(1, new MutableDecimal64(1, 0).compareTo(MutableDecimal64.ZERO));
+		assertThrows(NullPointerException.class, () -> new MutableDecimal64(0, 0).compareTo(null));
+		assertEquals(-1, new MutableDecimal64(-1, 0).compareTo(MutableDecimal64.zero()));
+		assertEquals(0, new MutableDecimal64(0, 0).compareTo(MutableDecimal64.zero()));
+		assertEquals(1, new MutableDecimal64(1, 0).compareTo(MutableDecimal64.zero()));
 
 		assertEquals(1, Decimal64Flyweight.compareTo(0, Decimal64Flyweight.NAN));
 		assertEquals(0, Decimal64Flyweight.compareTo(Decimal64Flyweight.NAN, Decimal64Flyweight.NAN));
@@ -411,9 +430,13 @@ public class Decimal64Test {
 		assertTrue(y.equals(z) && z.equals(y));
 		assertTrue(x.equals(z) && z.equals(x));
 
-		assertNotEquals(new MutableDecimal64(101, 0), new MutableDecimal64(10100, -2));
-		assertNotEquals(new MutableDecimal64(101, 0).hashCode(), new MutableDecimal64(10100, -2)
-			.hashCode());
+		// numerically equal values are equal whatever their number of decimals
+		assertEquals(new MutableDecimal64(101, 0), new MutableDecimal64(10100, -2));
+		assertEquals(new MutableDecimal64(101, 0).hashCode(), new MutableDecimal64(10100, -2).hashCode());
+		assertNotEquals(new MutableDecimal64(101, 0), new MutableDecimal64(10101, -2));
+		assertEquals(MutableDecimal64.nan(), MutableDecimal64.nan());
+		assertNotEquals(MutableDecimal64.nan(), MutableDecimal64.zero());
+		assertNotEquals(new MutableDecimal64(101, 0), new Decimal64(101, 0));
 		assertEquals(new MutableDecimal64(100, 1), new MutableDecimal64(1000, 0));
 	}
 
@@ -444,8 +467,15 @@ public class Decimal64Test {
 		assertTrue(y.equals(z) && z.equals(y));
 		assertTrue(x.equals(z) && z.equals(x));
 
-		assertNotEquals(new Decimal64(101, 0), new Decimal64(10100, -2));
-		assertNotEquals(new Decimal64(101, 0).hashCode(), new Decimal64(10100, -2).hashCode());
+		// numerically equal values are equal whatever their number of decimals
+		assertEquals(new Decimal64(101, 0), new Decimal64(10100, -2));
+		assertEquals(new Decimal64(101, 0).hashCode(), new Decimal64(10100, -2).hashCode());
+		assertNotEquals(new Decimal64(101, 0), new Decimal64(10101, -2));
+		assertEquals(Decimal64.NAN, Decimal64.NAN);
+		assertNotEquals(Decimal64.NAN, Decimal64.ZERO);
+		assertEquals(new Decimal64(0, -3), Decimal64.ZERO);
+		assertEquals(1, new HashSet<>(List.of(new Decimal64(1, 0), new Decimal64(10, -1),
+			new Decimal64(1000, -3))).size());
 		assertEquals(new Decimal64(100, 1), new Decimal64(1000, 0));
 
 	}
@@ -480,7 +510,7 @@ public class Decimal64Test {
 	private static void round(final long a, final int b, final DecimalRounding mode, final long c) {
 		System.out.format("%de%d, round(%s, %d) = %s%n", Decimal64Flyweight.mantissa(c),
             Decimal64Flyweight.exponent(c), Decimal64Flyweight.toString(a), b, Decimal64Flyweight.toString(c));
-        final DecimalContext context = new DecimalContext(mode);
+        final DecimalContext context = DecimalContext.of(mode);
 		final long r = Decimal64Flyweight.round(a, b, context);
 		assertEquals(r, c, "Expected " + Decimal64Flyweight.toString(c) + ", Value=" + Decimal64Flyweight.toString(r));
 
@@ -562,8 +592,8 @@ public class Decimal64Test {
 		assertTrue(Decimal64.valueOf(0, -3).isZero());
 		assertFalse(Decimal64.valueOf(1, 0).isZero());
 
-		assertFalse(MutableDecimal64.NAN.isZero());
-		assertTrue(MutableDecimal64.ZERO.isZero());
+		assertFalse(MutableDecimal64.nan().isZero());
+		assertTrue(MutableDecimal64.zero().isZero());
 		assertTrue(MutableDecimal64.valueOf(0, -3).isZero());
 		assertFalse(MutableDecimal64.valueOf(1, 0).isZero());
 	}
@@ -580,8 +610,8 @@ public class Decimal64Test {
 		assertFalse(Decimal64.valueOf(0, -3).isNaN());
 		assertFalse(Decimal64.valueOf(1, 0).isNaN());
 
-		assertTrue(MutableDecimal64.NAN.isNaN());
-		assertFalse(MutableDecimal64.ZERO.isNaN());
+		assertTrue(MutableDecimal64.nan().isNaN());
+		assertFalse(MutableDecimal64.zero().isNaN());
 		assertFalse(MutableDecimal64.valueOf(0, -3).isNaN());
 		assertFalse(MutableDecimal64.valueOf(1, 0).isNaN());
 	}
@@ -656,34 +686,34 @@ public class Decimal64Test {
 
 		assertEquals(Double.NaN, Decimal64Flyweight.doubleValue(Decimal64Flyweight.NAN), 0.0001D);
 		assertEquals(Float.NaN, Decimal64Flyweight.floatValue(Decimal64Flyweight.NAN), 0.0001F);
-		assertEquals(Decimal64Flyweight.NAN, Decimal64Flyweight.longValue(Decimal64Flyweight.NAN, IMMUTABLE));
+		assertThrows(ArithmeticException.class, () -> Decimal64Flyweight.longValue(Decimal64Flyweight.NAN, IMMUTABLE));
 
 		assertEquals(10, Decimal64Flyweight.byteValue(Decimal64Flyweight.valueOf(10, 0), IMMUTABLE));
 		assertEquals(10, Decimal64Flyweight.shortValue(Decimal64Flyweight.valueOf(10, 0), IMMUTABLE));
 		assertEquals(10, Decimal64Flyweight.intValue(Decimal64Flyweight.valueOf(10, 0), IMMUTABLE));
-		assertEquals(8, Decimal64Flyweight.byteValue(Decimal64Flyweight.NAN, IMMUTABLE));
-		assertEquals(8, Decimal64Flyweight.shortValue(Decimal64Flyweight.NAN, IMMUTABLE));
-        assertEquals(8, Decimal64Flyweight.intValue(Decimal64Flyweight.NAN, IMMUTABLE));
+		assertThrows(ArithmeticException.class, () -> Decimal64Flyweight.byteValue(Decimal64Flyweight.NAN, IMMUTABLE));
+		assertThrows(ArithmeticException.class, () -> Decimal64Flyweight.shortValue(Decimal64Flyweight.NAN, IMMUTABLE));
+        assertThrows(ArithmeticException.class, () -> Decimal64Flyweight.intValue(Decimal64Flyweight.NAN, IMMUTABLE));
 
-		assertEquals(8, Decimal64.NAN.byteValue(IMMUTABLE));
-		assertEquals(8, Decimal64.NAN.shortValue(IMMUTABLE));
-		assertEquals(8, Decimal64.NAN.intValue(IMMUTABLE));
-		assertEquals(Decimal64Flyweight.NAN, Decimal64.NAN.longValue(IMMUTABLE));
+		assertThrows(ArithmeticException.class, () -> Decimal64.NAN.byteValue(IMMUTABLE));
+		assertThrows(ArithmeticException.class, () -> Decimal64.NAN.shortValue(IMMUTABLE));
+		assertThrows(ArithmeticException.class, () -> Decimal64.NAN.intValue(IMMUTABLE));
+		assertThrows(ArithmeticException.class, () -> Decimal64.NAN.longValue(IMMUTABLE));
 		assertEquals(Float.NaN, Decimal64.NAN.floatValue(), 0.00001F);
 		assertEquals(Double.NaN, Decimal64.NAN.doubleValue(), 0.00001D);
 
-		assertEquals(8, MutableDecimal64.NAN.byteValue(MUTABLE));
-		assertEquals(8, MutableDecimal64.NAN.shortValue(MUTABLE));
-		assertEquals(8, MutableDecimal64.NAN.intValue(MUTABLE));
-		assertEquals(Decimal64Flyweight.NAN, MutableDecimal64.NAN.longValue(MUTABLE));
-		assertEquals(Float.NaN, MutableDecimal64.NAN.floatValue(), 0.00001F);
-		assertEquals(Double.NaN, MutableDecimal64.NAN.doubleValue(), 0.00001D);
+		assertThrows(ArithmeticException.class, () -> MutableDecimal64.nan().byteValue(MUTABLE));
+		assertThrows(ArithmeticException.class, () -> MutableDecimal64.nan().shortValue(MUTABLE));
+		assertThrows(ArithmeticException.class, () -> MutableDecimal64.nan().intValue(MUTABLE));
+		assertThrows(ArithmeticException.class, () -> MutableDecimal64.nan().longValue(MUTABLE));
+		assertEquals(Float.NaN, MutableDecimal64.nan().floatValue(), 0.00001F);
+		assertEquals(Double.NaN, MutableDecimal64.nan().doubleValue(), 0.00001D);
 
 		assertEquals(Decimal64.valueOf(4895, -3), Decimal64.valueOf(4.895F, 3));
 		assertEquals(MutableDecimal64.valueOf(4895, -3), MutableDecimal64.valueOf(4.895D, 3));
 
 		assertEquals(Decimal64.NAN, Decimal64.valueOf(Double.NaN, 3));
-		assertEquals(MutableDecimal64.NAN, MutableDecimal64.valueOf(Double.NaN, 3));
+		assertEquals(MutableDecimal64.nan(), MutableDecimal64.valueOf(Double.NaN, 3));
 	}
 
 	@Test
@@ -717,5 +747,30 @@ public class Decimal64Test {
 		final MutableDecimal64 mutable2 = mutable1.add(MutableDecimal64.valueOf(25, 0));
         assertSame(mutable1, mutable2);
         assertEquals(mutable1, mutable2);
+	}
+
+	@Test
+	public void newOperations() {
+		final DecimalContext halfUp = DecimalContext.HALF_UP;
+		final Decimal64 price = Decimal64.valueOf("101.25");
+		assertEquals(Decimal64.valueOf("1012.50"), price.multiplyByInteger(10));
+		assertEquals(Decimal64.valueOf("33.75"), price.divideByInteger(3, halfUp));
+		assertEquals(Decimal64.valueOf("101.20"), price.roundToIncrement(Decimal64.valueOf("0.2"), halfUp));
+		assertEquals(Decimal64.valueOf("101"), price.floor());
+		assertEquals(Decimal64.valueOf("102"), price.ceil());
+		assertEquals(Decimal64.valueOf("1.25"), price.remainder(Decimal64.valueOf("2")));
+		final byte[] bytes = new byte[Decimal64Flyweight.STRING_LENGTH_MAX];
+		assertEquals("101.25", new String(bytes, 0, price.toBytes(bytes, 0), StandardCharsets.ISO_8859_1));
+		assertEquals(Decimal64.valueOf("101.25"), price); // unchanged
+
+		final MutableDecimal64 mutable = MutableDecimal64.valueOf("101.25");
+		assertEquals(MutableDecimal64.valueOf("1012.50"), mutable.multiplyByInteger(10));
+		assertEquals(MutableDecimal64.valueOf("337.50"), mutable.divideByInteger(3, halfUp));
+		assertEquals(MutableDecimal64.valueOf("337.50"), mutable.roundToIncrement(MutableDecimal64.valueOf("0.25"), halfUp));
+		assertEquals(MutableDecimal64.valueOf("1.50"), mutable.remainder(MutableDecimal64.valueOf("4")));
+		assertEquals(MutableDecimal64.valueOf("2"), mutable.ceil());
+		assertEquals(MutableDecimal64.valueOf("2"), mutable.floor());
+		assertEquals("2", new String(bytes, 0, mutable.toBytes(bytes, 0), StandardCharsets.ISO_8859_1));
+		assertTrue(MutableDecimal64.valueOf("1").divideByInteger(0, halfUp).isNaN());
 	}
 }

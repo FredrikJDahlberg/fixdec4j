@@ -2,6 +2,9 @@ package org.limitless.fixdec4j;
 
 import org.junit.jupiter.api.Test;
 
+import java.math.BigInteger;
+import java.util.SplittableRandom;
+
 import static org.junit.jupiter.api.Assertions.*;
 
 public class MutableUnsigned128Test {
@@ -61,6 +64,35 @@ public class MutableUnsigned128Test {
 
         final MutableUnsigned128 product1 = new MutableUnsigned128(quotient).multiply(value2).add(remainder);
         assertEquals(0, value1.compareTo(product1), "Failed, product=" + product1 + " expected=" + value1);
+    }
+
+    @Test
+    public void divisionByLongMatchesBigInteger() {
+        final SplittableRandom random = new SplittableRandom(90);
+        final MutableUnsigned128.Context context = new MutableUnsigned128.Context();
+        for (int i = 0; i < 200_000; i++) {
+            final long high = random.nextLong() >>> random.nextInt(64);
+            final long low = random.nextLong();
+            final long divisor = (random.nextLong() >>> random.nextInt(64)) | 1;
+            final BigInteger dividend = unsigned(high).shiftLeft(64).add(unsigned(low));
+            final BigInteger[] expected = dividend.divideAndRemainder(unsigned(divisor));
+            final MutableUnsigned128 quotient = of(high, low);
+            final MutableUnsigned128 remainder = new MutableUnsigned128();
+            quotient.divide(of(0, divisor), remainder, context);
+            assertEquals(expected[0], unsigned(quotient.highBits()).shiftLeft(64).add(unsigned(quotient.lowBits())));
+            assertEquals(expected[1], unsigned(remainder.lowBits()));
+            assertEquals(0, remainder.highBits());
+            if (Long.compareUnsigned(high, divisor) < 0) {
+                // the static division used by the decimal types, the remainder from the low bits
+                final long q = MutableUnsigned128.divide(high, low, divisor);
+                assertEquals(expected[0], unsigned(q));
+                assertEquals(expected[1], unsigned(low - q * divisor));
+            }
+        }
+    }
+
+    private static BigInteger unsigned(final long value) {
+        return new BigInteger(Long.toUnsignedString(value));
     }
 
     @Test

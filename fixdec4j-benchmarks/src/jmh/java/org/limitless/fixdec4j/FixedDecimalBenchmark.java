@@ -21,13 +21,17 @@ public class FixedDecimalBenchmark {
     @Param
     Operands operands;
 
+    // HALF_UP is inlined into the arithmetic, the other modes take a separate path
+    @Param({"HALF_UP", "HALF_EVEN"})
+    DecimalRounding rounding;
+
     // The scales are fields, not static final constants, so the JIT cannot fold the number of
     // decimals: the conservative case. The results have the largest number of decimals of the
     // operands, matching the Decimal64 benchmarks.
     FixedDecimal<Object> scale;
     FixedDecimal<Object> scale1;
     FixedDecimal<Object> scale2;
-    DecimalContext context = new DecimalContext(DecimalRounding.HALF_UP);
+    DecimalContext context;
 
     // operands in the result scale
     long value;
@@ -43,9 +47,12 @@ public class FixedDecimalBenchmark {
     // value in the result scale as a string, e.g. "12345.6789", and as a FIX field "44=12345.6789<SOH>"
     String string;
     byte[] message;
+    final byte[] output = new byte[FixedDecimal.STRING_LENGTH_MAX];
 
     @Setup
     public void setup() {
+        context = DecimalContext.of(rounding);
+        final RoundingMode mode = rounding.toRoundingMode();
         scale = FixedDecimal.of(operands.decimals());
         scale1 = FixedDecimal.of(operands.decimals1);
         scale2 = FixedDecimal.of(operands.decimals2);
@@ -64,16 +71,20 @@ public class FixedDecimalBenchmark {
         final int decimals = operands.decimals();
         verify("add", big1.add(big2), add());
         verify("subtract", big1.subtract(big2), subtract());
-        verify("multiply", big1.multiply(big2).setScale(decimals, RoundingMode.HALF_UP), multiply());
-        verify("divide", big1.divide(big2, decimals, RoundingMode.HALF_UP), divide());
-        verify("multiplyMixed", big1.multiply(big2).setScale(decimals, RoundingMode.HALF_UP), multiplyMixed());
-        verify("divideMixed", big1.divide(big2, decimals, RoundingMode.HALF_UP), divideMixed());
-        verify("typedMultiply", big1.multiply(big2).setScale(decimals, RoundingMode.HALF_UP), typedMultiply().raw());
+        verify("multiply", big1.multiply(big2).setScale(decimals, mode), multiply());
+        verify("divide", big1.divide(big2, decimals, mode), divide());
+        verify("multiplyMixed", big1.multiply(big2).setScale(decimals, mode), multiplyMixed());
+        verify("divideMixed", big1.divide(big2, decimals, mode), divideMixed());
+        verify("typedMultiply", big1.multiply(big2).setScale(decimals, mode), typedMultiply().raw());
         verify("parse", big1, parse());
         verify("parseBytes", big1, parseBytes());
         if (!big1.setScale(decimals).toPlainString().equals(format())) {
             throw new IllegalStateException(operands + " format: expected " + big1.toPlainString() + " but was " +
                 format());
+        }
+        final String bytes = new String(output, 0, formatBytes(), StandardCharsets.ISO_8859_1);
+        if (!bytes.equals(format())) {
+            throw new IllegalStateException(operands + " formatBytes: expected " + format() + " but was " + bytes);
         }
     }
 
@@ -144,6 +155,11 @@ public class FixedDecimalBenchmark {
     @Benchmark
     public String format() {
         return scale.toString(value);
+    }
+
+    @Benchmark
+    public int formatBytes() {
+        return scale.toBytes(value, output, 0);
     }
 
     public static void main(String[] args) throws RunnerException {

@@ -20,7 +20,7 @@ public class Decimal64Benchmark {
 
     Decimal64 value;
     Decimal64 decimal;
-    DecimalContext context = new DecimalContext(DecimalRounding.HALF_UP);
+    DecimalContext context = DecimalContext.HALF_UP;
 
     @Setup
     public void setup() {

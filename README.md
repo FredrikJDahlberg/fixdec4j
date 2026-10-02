@@ -1,6 +1,8 @@
 Fixed Decimal Arithmetic
 ========================
 
+[![License](https://img.shields.io/github/license/FredrikJDahlberg/fixdec4j)](LICENSE)
+
 Implemented data types:
 
 * Decimal 64 bits, where each value stores its number of decimals (0 - 7): immutable `Decimal64`, mutable `MutableDecimal64` and flyweight `Decimal64Flyweight`
@@ -205,11 +207,7 @@ Size of one value on the heap, measured with [JOL](https://github.com/openjdk/jo
 
 A `DecimalContext` holds only the rounding mode, 16 bytes, and is shared: the operations above keep their 128-bit intermediates in registers and do not allocate.
 
-License (See LICENSE file for full license)
--------------------------------------------
+License
+-------
 
-Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the License. You may obtain a copy of the License at
-
-    https://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions and limitations under the License.
+Licensed under the Apache License, Version 2.0. See [LICENSE](LICENSE) for the full text, and <https://www.apache.org/licenses/LICENSE-2.0> for the canonical copy. Copyright is recorded in [NOTICE](NOTICE); §4d obliges anyone redistributing fixdec4j to carry that file forward. fixdec4j has no runtime dependencies, and both files ship inside the jar under `META-INF/`.
